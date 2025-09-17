@@ -1,0 +1,1 @@
+Run `npm install` and `npm run dev`. Configure API base if needed.
