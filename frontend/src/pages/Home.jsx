@@ -12,6 +12,39 @@ import { whatsappService } from '../utils/whatsappService'
 
 
 function Home() {
+  // Custom hook for scroll animations
+  const useScrollAnimation = () => {
+    const [isVisible, setIsVisible] = useState(false);
+    const elementRef = useRef(null);
+
+    useEffect(() => {
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+            observer.unobserve(entry.target);
+          }
+        },
+        {
+          threshold: 0.1,
+          rootMargin: '0px 0px -50px 0px'
+        }
+      );
+
+      if (elementRef.current) {
+        observer.observe(elementRef.current);
+      }
+
+      return () => {
+        if (elementRef.current) {
+          observer.unobserve(elementRef.current);
+        }
+      };
+    }, []);
+
+    return [elementRef, isVisible];
+  };
+
   const [bookingForm, setBookingForm] = useState({
     name: '',
     phone: '',
@@ -23,6 +56,8 @@ function Home() {
   const packagesTopRef = useRef(null)
   const bookingRef = useRef(null)
   const allTestsRef = useRef(null)
+  const processRef = useRef(null)
+  const featuresRef = useRef(null)
   const [showMoreHematology, setShowMoreHematology] = useState(false)
   const [showMoreBiochemistry, setShowMoreBiochemistry] = useState(false)
   const [showMoreSerology, setShowMoreSerology] = useState(false)
@@ -35,30 +70,20 @@ function Home() {
   const [tests, setTests] = useState([]);
   const [filteredTests, setFilteredTests] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [sortBy, setSortBy] = useState('name');
 
   // Set initial tests data
   useEffect(() => {
     setTests(mockTests);
   }, []);
-
-  // Categories from Tests.jsx
-  const categories = [
-    { value: 'all', label: 'All Tests' },
-    { value: 'blood', label: 'Blood Tests' },
-    { value: 'organ', label: 'Organ Function' },
-    { value: 'hormone', label: 'Hormone Tests' },
-    { value: 'diabetes', label: 'Diabetes' },
-    { value: 'cardiac', label: 'Cardiac' },
-    { value: 'vitamin', label: 'Vitamins' },
-    { value: 'inflammatory', label: 'Inflammatory' },
-    { value: 'urine', label: 'Urine Tests' }
-  ];
   const [menuOpen, setMenuOpen] = useState(false);
   const [currentBg, setCurrentBg] = useState(0)
   const [showBookingModal, setShowBookingModal] = useState(false)
   const [modalEnter, setModalEnter] = useState(false)
+  const [showPathologyBookingModal, setShowPathologyBookingModal] = useState(false)
+  const [pathologyModalEnter, setPathologyModalEnter] = useState(false)
+  const [selectedPathologyCategory, setSelectedPathologyCategory] = useState('')
+  const [selectedPathologyTest, setSelectedPathologyTest] = useState('')
+  const [selectedPathologyPrice, setSelectedPathologyPrice] = useState('')
 
 
   const scrollToSection = (ref) => {
@@ -103,6 +128,26 @@ function Home() {
       setModalEnter(false)
     }
   }, [showBookingModal])
+
+  // Animate pathology booking modal on open
+  useEffect(() => {
+    if (showPathologyBookingModal) {
+      const id = requestAnimationFrame(() => setPathologyModalEnter(true))
+      return () => cancelAnimationFrame(id)
+    } else {
+      setPathologyModalEnter(false)
+    }
+  }, [showPathologyBookingModal])
+
+  // Auto-hide toast after 10 seconds
+  useEffect(() => {
+    if (toast.show) {
+      const timer = setTimeout(() => {
+        setToast({ ...toast, show: false })
+      }, 10000)
+      return () => clearTimeout(timer)
+    }
+  }, [toast.show])
 
   const handleBookingSubmitModal = (e) => {
     handleBookingSubmit(e)
@@ -173,22 +218,105 @@ function Home() {
   }
 
   const handleDirectBookTestWhatsApp = (test) => {
-    // Send directly via WhatsApp Web
-    whatsappService.sendViaWhatsAppWeb(test, 'test')
-    
-    setToast({ show: true, type: 'success', message: `Opening WhatsApp to book ${test.name}...` })
+    // Use the popup form instead of direct WhatsApp
+    openPathologyBookingModal('Individual Test', test.name, test.price)
   }
 
   const handlePackageBookWhatsApp = (packageName, packagePrice) => {
-    // Send package booking via WhatsApp Web
-    const packageData = {
-      name: packageName,
-      price: packagePrice,
-      type: 'package'
+    // Use the popup form instead of direct WhatsApp
+    openPathologyBookingModal('Package', packageName, packagePrice)
+  }
+
+  const handleCallUs = () => {
+    // Redirect to phone dialpad
+    window.location.href = 'tel:+912422299688'
+    setToast({ show: true, type: 'success', message: 'Opening dialpad...' })
+  }
+
+  const handleRequestCallBack = () => {
+    // Send callback request via WhatsApp
+    const callbackData = {
+      message: 'Requesting a callback from Jijau Diagnostics',
+      timestamp: new Date().toLocaleString(),
+      type: 'callback'
     }
-    whatsappService.sendViaWhatsAppWeb(packageData, 'package')
     
-    setToast({ show: true, type: 'success', message: `Opening WhatsApp to book ${packageName}...` })
+    try {
+      whatsappService.sendViaWhatsAppWeb(callbackData, 'callback')
+      setToast({ show: true, type: 'success', message: 'Callback request sent via WhatsApp!' })
+    } catch (error) {
+      console.error('Error sending callback request:', error)
+      setToast({ show: true, type: 'error', message: 'Failed to send callback request. Please try again.' })
+    }
+  }
+
+  const handleWhatsAppChat = () => {
+    // Redirect to WhatsApp chat
+    const whatsappUrl = `https://wa.me/918605941731`
+    window.open(whatsappUrl, '_blank')
+    setToast({ show: true, type: 'success', message: 'Opening WhatsApp chat...' })
+  }
+
+  const openPathologyBookingModal = (category, testName, testPrice) => {
+    setSelectedPathologyCategory(category)
+    setSelectedPathologyTest(testName)
+    setSelectedPathologyPrice(testPrice)
+    setShowPathologyBookingModal(true)
+  }
+
+  const handlePathologyBookingSubmit = (e) => {
+    e.preventDefault()
+    
+    // Create booking data with pre-selected pathology category and test
+    const pathologyBookingData = {
+      name: bookingForm.name,
+      phone: bookingForm.phone,
+      address: bookingForm.address,
+      testType: selectedPathologyCategory, // Use the selected pathology category
+      customTestType: selectedPathologyTest, // Use the specific test name
+      testPrice: selectedPathologyPrice,
+      category: 'pathology'
+    }
+    
+    // Send via WhatsApp Web
+    try {
+      whatsappService.sendViaWhatsAppWeb(pathologyBookingData, 'pathology_booking')
+      setToast({ show: true, type: 'success', message: `Opening WhatsApp to book ${selectedPathologyTest}...` })
+      
+      // Reset form and close modal
+      setBookingForm({ 
+        name: '', 
+        phone: '', 
+        address: '', 
+        testType: '', 
+        customTestType: '' 
+      })
+      setShowPathologyBookingModal(false)
+      
+    } catch (error) {
+      console.error('Error opening WhatsApp:', error)
+      setToast({ show: true, type: 'error', message: 'Could not open WhatsApp. Please try again.' })
+    }
+  }
+
+  const handleHematologyBook = (testName, testPrice) => {
+    openPathologyBookingModal('Hematology', testName, testPrice)
+  }
+
+  const handleBiochemistryBook = (testName, testPrice) => {
+    openPathologyBookingModal('Biochemistry', testName, testPrice)
+  }
+
+  const handleSerologyBook = (testName, testPrice) => {
+    openPathologyBookingModal('Serology', testName, testPrice)
+  }
+
+  const handleClinicalPathologyBook = (testName, testPrice) => {
+    openPathologyBookingModal('Clinical Pathology', testName, testPrice)
+  }
+
+  const handleHistopathologyBook = (testName, testPrice) => {
+    openPathologyBookingModal('Histopathology', testName, testPrice)
   }
 
   // Filter and sort tests
@@ -203,26 +331,8 @@ function Home() {
       );
     }
 
-    // Filter by category
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(test => test.category === selectedCategory);
-    }
-
-    // Sort
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'price-low':
-          return a.price - b.price;
-        case 'price-high':
-          return b.price - a.price;
-        case 'name':
-        default:
-          return a.name.localeCompare(b.name);
-      }
-    });
-
-    setFilteredTests(filtered);
-  }, [tests, searchTerm, selectedCategory, sortBy]);
+      setFilteredTests(filtered);
+  }, [tests, searchTerm]);
 
  
   // Mock data for tests
@@ -588,7 +698,7 @@ function Home() {
 
                 <button
                   type="submit"
-                  className="w-full py-3 px-6 bg-green-600 text-white rounded-lg font-bold text-base transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 hover:bg-green-700 flex items-center justify-center gap-2"
+                  className="w-full py-3 px-6 bg-purple-600 text-white rounded-lg font-bold text-base transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 hover:bg-purple-700 flex items-center justify-center gap-2"
                   onMouseEnter={(e) => e.target.style.backgroundColor = '#4A1F7A'}
                   onMouseLeave={(e) => e.target.style.backgroundColor = '#642EAA'}
                 >
@@ -608,6 +718,105 @@ function Home() {
           </div>
         </div>
       )}
+
+      {/* Pathology Booking Modal */}
+      {showPathologyBookingModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          <div className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${pathologyModalEnter ? 'opacity-100' : 'opacity-0'}`} onClick={() => setShowPathologyBookingModal(false)}></div>
+          <div className={`relative bg-white w-[95vw] max-w-4xl rounded-2xl shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2 z-[61] transform transition-all duration-300 ease-out ${pathologyModalEnter ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-4 scale-95'}`}>
+            {/* Left Illustration */}
+            <div className="hidden md:block bg-white p-0">
+              <img src={image17} alt="Booking illustration" className="w-full h-full object-contain" />
+            </div>
+            {/* Right Form */}
+            <div className="p-6 sm:p-8">
+              <button onClick={() => setShowPathologyBookingModal(false)} className="absolute right-3 top-3 text-gray-500 hover:text-gray-700" aria-label="Close">
+                ✕
+              </button>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Book {selectedPathologyCategory} Test</h3>
+              <p className="text-gray-600 mb-2">{selectedPathologyTest} - {selectedPathologyPrice}</p>
+              <p className="text-gray-600 mb-6">Fill the form and we'll call you within 15 minutes</p>
+              <form onSubmit={handlePathologyBookingSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Full Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={bookingForm.name}
+                      onChange={(e) => setBookingForm({ ...bookingForm, name: e.target.value })}
+                      className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:border-purple-500 focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Phone Number *</label>
+                    <input
+                      type="tel"
+                      required
+                      value={bookingForm.phone}
+                      onChange={(e) => setBookingForm({ ...bookingForm, phone: e.target.value })}
+                      className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:border-purple-500 focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                      placeholder="Enter your phone number"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Complete Address *</label>
+                  <textarea
+                    required
+                    value={bookingForm.address}
+                    onChange={(e) => setBookingForm({ ...bookingForm, address: e.target.value })}
+                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:border-purple-500 focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                    placeholder="Enter your complete address"
+                    rows="2"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Test Category</label>
+                  <input
+                    type="text"
+                    disabled
+                    value={selectedPathologyCategory}
+                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg bg-gray-100 text-gray-600"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Selected Test</label>
+                  <input
+                    type="text"
+                    disabled
+                    value={`${selectedPathologyTest} - ${selectedPathologyPrice}`}
+                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg bg-gray-100 text-gray-600"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-3 px-6 bg-purple-600 text-white rounded-lg font-bold text-base transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 hover:bg-purple-700 flex items-center justify-center gap-2"
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#4A1F7A'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = '#642EAA'}
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.471.099-.174.05-.347-.025-.471-.075-.124-.67-1.612-.916-2.206-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.011-1.04 2.475 0 1.464 1.065 2.875 1.215 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+                  </svg>
+                  Book Test
+                </button>
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  *All fields are mandatory. Terms and conditions apply.
+                </p>
+                <p className="text-xs text-gray-500 mt-1 text-center">
+                  Click "Send via WhatsApp" to send your booking details directly to our admin
+                </p>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
 <header
       className="fixed w-full top-0 z-50 backdrop-blur-md border-b border-purple-200"
@@ -758,7 +967,7 @@ function Home() {
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center justify-items-center md:justify-items-start h-full -mt-0 md:-mt-4 lg:mt-0">
         {/* Left: Slide content blocks */}
-        <div className="relative">
+        <div className="relative scroll-fade-in scroll-slide-left">
           {/* Slide 1: Accurate Diagnostics */}
           <div className={`max-w-3xl transition-opacity duration-700 text-center md:text-left mx-auto md:mx-0 ${currentBg === 0 ? 'opacity-100' : 'opacity-0 pointer-events-none absolute'}`}>
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold text-purple-900 mb-2 sm:mb-3 leading-tight">
@@ -771,12 +980,12 @@ function Home() {
               State-of-the-art equipment and certified technicians ensure accurate results
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-8">
-              <a href="#all-tests" className="inline-flex items-center justify-center px-6 py-3 rounded-lg font-semibold text-black bg-gradient-to-r from-yellow-300 to-orange-400 hover:from-yellow-400 hover:to-orange-500 transition-colors shadow-lg">
+              <button onClick={() => scrollToSection(allTestsRef)} className="inline-flex items-center justify-center px-6 py-3 rounded-lg font-semibold text-black bg-gradient-to-r from-yellow-300 to-orange-400 hover:from-yellow-400 hover:to-orange-500 transition-colors shadow-lg cursor-pointer">
                 View Tests
-              </a>
-              <a href="#packages" className="inline-flex items-center justify-center px-6 py-3 rounded-lg font-semibold text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50 transition-colors">
+              </button>
+              <button onClick={() => scrollToSection(packagesTopRef)} className="inline-flex items-center justify-center px-6 py-3 rounded-lg font-semibold text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50 transition-colors cursor-pointer">
                 View Packages
-              </a>
+              </button>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
               <div className="bg-white border border-gray-200 text-gray-900 rounded-xl px-4 py-3 shadow-sm">
@@ -810,12 +1019,12 @@ function Home() {
               <span className="text-lg">₹599/-</span>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-8">
-              <a href="#packages" className="inline-flex items-center justify-center px-6 py-3 rounded-lg font-semibold text-black bg-gradient-to-r from-emerald-300 to-cyan-300 hover:from-emerald-400 hover:to-cyan-400 transition-colors shadow-lg">
+              <button onClick={() => scrollToSection(packagesTopRef)} className="inline-flex items-center justify-center px-6 py-3 rounded-lg font-semibold text-black bg-gradient-to-r from-emerald-300 to-cyan-300 hover:from-emerald-400 hover:to-cyan-400 transition-colors shadow-lg cursor-pointer">
                 Explore Packages
-              </a>
-              <a href="#booking" className="inline-flex items-center justify-center px-6 py-3 rounded-lg font-semibold text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50 transition-colors">
+              </button>
+              <button onClick={() => scrollToSection(bookingRef)} className="inline-flex items-center justify-center px-6 py-3 rounded-lg font-semibold text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50 transition-colors cursor-pointer">
                 Book a Checkup
-              </a>
+              </button>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <div className="bg-white border border-gray-200 text-gray-900 rounded-xl px-4 py-3 shadow-sm">
@@ -841,12 +1050,12 @@ function Home() {
               Strict sanitization and safety protocols followed for every test
             </p>
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 mb-10">
-              <a href="#booking" className="inline-flex items-center justify-center px-8 py-4 rounded-lg font-semibold text-black bg-gradient-to-r from-emerald-300 to-cyan-300 hover:from-emerald-400 hover:to-cyan-400 transition-colors shadow-lg">
+              <button onClick={() => scrollToSection(bookingRef)} className="inline-flex items-center justify-center px-8 py-4 rounded-lg font-semibold text-black bg-gradient-to-r from-emerald-300 to-cyan-300 hover:from-emerald-400 hover:to-cyan-400 transition-colors shadow-lg cursor-pointer">
                 Book Home Collection
-              </a>
-              <a href="#features" className="inline-flex items-center justify-center px-8 py-4 rounded-lg font-semibold text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50 transition-colors">
+              </button>
+              <button onClick={() => scrollToSection(featuresRef)} className="inline-flex items-center justify-center px-8 py-4 rounded-lg font-semibold text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50 transition-colors cursor-pointer">
                 See Safety Protocols
-              </a>
+              </button>
             </div>
             <div className="grid grid-cols-2 gap-4 sm:gap-6">
               <div className="bg-white border border-gray-200 text-gray-900 rounded-xl px-6 py-4 shadow-sm">
@@ -872,12 +1081,12 @@ function Home() {
               Enjoy doorstep sample pickup by certified phlebotomists.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 mb-10">
-              <a href="#booking" className="inline-flex items-center justify-center px-8 py-4 rounded-lg font-semibold text-black bg-gradient-to-r from-sky-300 to-emerald-300 hover:from-sky-400 hover:to-emerald-400 transition-colors shadow-lg">
+              <button onClick={() => scrollToSection(bookingRef)} className="inline-flex items-center justify-center px-8 py-4 rounded-lg font-semibold text-black bg-gradient-to-r from-sky-300 to-emerald-300 hover:from-sky-400 hover:to-emerald-400 transition-colors shadow-lg cursor-pointer">
                 Book Now
-              </a>
-              <a href="#features" className="inline-flex items-center justify-center px-8 py-4 rounded-lg font-semibold text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50 transition-colors">
+              </button>
+              <button onClick={() => scrollToSection(processRef)} className="inline-flex items-center justify-center px-8 py-4 rounded-lg font-semibold text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50 transition-colors cursor-pointer">
                 How It Works
-              </a>
+              </button>
             </div>
             <div className="grid grid-cols-2 gap-4 sm:gap-6">
               <div className="bg-white border border-gray-200 text-gray-900 rounded-xl px-6 py-4 shadow-sm">
@@ -893,7 +1102,7 @@ function Home() {
         </div>
 
         {/* Right: Slide images, crossfading */}
-        <div className="relative w-full h-64 sm:h-80 md:h-[420px] lg:h-[520px] flex items-center justify-center">
+        <div className="relative w-full h-64 sm:h-80 md:h-[420px] lg:h-[520px] flex items-center justify-center scroll-fade-in scroll-slide-right">
           {[img2, img4, img3, img1].map((image, index) => (
             <div key={index} className={`absolute inset-0 flex items-center justify-center transition-opacity duration-700 ${currentBg === index ? 'opacity-100' : 'opacity-0'}`}>
               <img src={image} alt={`Slide ${index + 1}`} className="max-h-full max-w-full object-contain" />
@@ -909,15 +1118,15 @@ function Home() {
       {/* Booking Form */}
       <section ref={bookingRef} id="booking" className="pt-4 pb-12 md:py-20 bg-gradient-to-br from-purple-50 via-white to-purple-100">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold mb-4" style={{ backgroundColor: '#E8D5F2', color: '#642EAA' }}>
+          <div className="text-center mb-16 scroll-fade-in scroll-scale-up">
+            <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold mb-4 scroll-float" style={{ backgroundColor: '#E8D5F2', color: '#642EAA' }}>
               <span className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: '#642EAA' }}></span>
               Quick & Easy Booking
             </div>
-            <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+            <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6 scroll-slide-up">
               Schedule Your Test Today
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed scroll-slide-up scroll-delay-200">
               Get professional pathology services at your doorstep. Our certified technicians will visit you within 30 minutes of booking.
             </p>
           </div>
@@ -1462,7 +1671,7 @@ function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-secondary-900 mb-4">BLOOD TESTS OVERVIEW</h2>
-            <p className="text-lg text-secondary-600">Explore our comprehensive range of diagnostic test categories</p>
+            <p className="text-lg text-secondary-600 mb-6">Explore our comprehensive range of pathology test categories</p>
           </div>
 
           <div className="space-y-4">
@@ -1483,7 +1692,12 @@ function Home() {
                     </div>
                     <div className="mt-4 flex items-center justify-between">
                       <span className="text-[#7F55B1] font-bold">{t.price}</span>
-                      <button className="px-4 py-2 bg-[#7F55B1] hover:bg-[#6B46A3] text-white text-sm rounded-lg">Book Now</button>
+                      <button 
+                        className="px-4 py-2 bg-[#7F55B1] hover:bg-[#6B46A3] text-white text-sm rounded-lg cursor-pointer"
+                        onClick={() => handleHematologyBook(t.name, t.price)}
+                      >
+                        Book Now
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -1516,7 +1730,12 @@ function Home() {
                     </div>
                     <div className="mt-4 flex items-center justify-between">
                       <span className="text-[#7F55B1] font-bold">{t.price}</span>
-                      <button className="px-4 py-2 bg-[#7F55B1] hover:bg-[#6B46A3] text-white text-sm rounded-lg">Book Now</button>
+                      <button 
+                        className="px-4 py-2 bg-[#7F55B1] hover:bg-[#6B46A3] text-white text-sm rounded-lg cursor-pointer"
+                        onClick={() => handleBiochemistryBook(t.name, t.price)}
+                      >
+                        Book Now
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -1549,7 +1768,12 @@ function Home() {
                     </div>
                     <div className="mt-4 flex items-center justify-between">
                       <span className="text-[#7F55B1] font-bold">{t.price}</span>
-                      <button className="px-4 py-2 bg-[#7F55B1] hover:bg-[#6B46A3] text-white text-sm rounded-lg">Book Now</button>
+                      <button 
+                        className="px-4 py-2 bg-[#7F55B1] hover:bg-[#6B46A3] text-white text-sm rounded-lg cursor-pointer"
+                        onClick={() => handleSerologyBook(t.name, t.price)}
+                      >
+                        Book Now
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -1582,7 +1806,12 @@ function Home() {
                     </div>
                     <div className="mt-4 flex items-center justify-between">
                       <span className="text-[#7F55B1] font-bold">{t.price}</span>
-                      <button className="px-4 py-2 bg-[#7F55B1] hover:bg-[#6B46A3] text-white text-sm rounded-lg">Book Now</button>
+                      <button 
+                        className="px-4 py-2 bg-[#7F55B1] hover:bg-[#6B46A3] text-white text-sm rounded-lg cursor-pointer"
+                        onClick={() => handleClinicalPathologyBook(t.name, t.price)}
+                      >
+                        Book Now
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -1634,7 +1863,10 @@ function Home() {
                     </div>
                     <div className="mt-4 flex items-center justify-between">
                       <span className="text-[#7F55B1] font-bold">{t.price}</span>
-                      <button className="px-4 py-2 bg-[#7F55B1] hover:bg-[#6B46A3] text-white text-sm rounded-lg">
+                      <button 
+                        className="px-4 py-2 bg-[#7F55B1] hover:bg-[#6B46A3] text-white text-sm rounded-lg cursor-pointer"
+                        onClick={() => handleHistopathologyBook(t.name, t.price)}
+                      >
                         Book Now
                       </button>
                     </div>
@@ -1659,17 +1891,17 @@ function Home() {
             </details>
 
             {/* All Tests Section */}
-            <section ref={allTestsRef} className="py-16 bg-secondary-50">
+            <section ref={allTestsRef} className="py-16 bg-secondary-50 w-full" style={{ width: '100vw', marginLeft: 'calc(-50vw + 50%)', marginRight: 'calc(-50vw + 50%)' }}>
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center mb-12">
-                  <h2 className="text-3xl font-bold text-secondary-900 mb-4">All Available Tests</h2>
-                  <p className="text-lg text-secondary-600">Search and explore our comprehensive range of diagnostic tests</p>
+                <div className="text-center mb-12 scroll-fade-in scroll-scale-up">
+                  <h2 className="text-3xl font-bold text-secondary-900 mb-4 scroll-slide-up">All Available Tests</h2>
+                  <p className="text-lg text-secondary-600 scroll-slide-up scroll-delay-200">Search and explore our comprehensive range of diagnostic tests</p>
                 </div>
 
                 {/* Filters */}
-                <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
+                <div className="bg-white rounded-xl shadow-lg p-6 mb-8 max-w-4xl mx-auto">
+                  <div className="flex gap-4">
+                    <div className="flex-1">
                       <label className="block text-sm font-medium text-secondary-700 mb-2">Search Tests</label>
                       <input
                         type="text"
@@ -1679,37 +1911,27 @@ function Home() {
                         className="w-full px-4 py-3 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-secondary-700 mb-2">Category</label>
-                      <select
-                        value={selectedCategory}
-                        onChange={(e) => setSelectedCategory(e.target.value)}
-                        className="w-full px-4 py-3 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    <div className="flex items-end">
+                      <button
+                        onClick={() => {
+                          // Search functionality is already handled by onChange, but this provides a visual button
+                          console.log('Searching for:', searchTerm);
+                        }}
+                        className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2"
                       >
-                        {categories.map(category => (
-                          <option key={category.value} value={category.value}>{category.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-secondary-700 mb-2">Sort By</label>
-                      <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
-                        className="w-full px-4 py-3 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                      >
-                        <option value="name">Name (A-Z)</option>
-                        <option value="price-low">Price (Low to High)</option>
-                        <option value="price-high">Price (High to Low)</option>
-                      </select>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        Search
+                      </button>
                     </div>
                   </div>
                 </div>
 
                 {/* Tests Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredTests.map(test => (
-                    <div key={test.id} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow p-6">
+                  {filteredTests.map((test, index) => (
+                    <div key={test.id} className={`bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow p-6 scroll-fade-in scroll-scale-up scroll-delay-${index * 100}`}>
                       <div className="flex justify-between items-start mb-4">
                         <h3 className="text-lg font-semibold text-secondary-900">{test.name}</h3>
                         <span className="text-primary-600 font-bold text-xl">₹{test.price}</span>
@@ -1766,61 +1988,64 @@ function Home() {
           <h2 className="text-2xl font-bold mb-4">Need Help Choosing the Right Test?</h2>
           <p className="text-lg mb-6">Our health advisors are here to help you select the most appropriate tests for your needs.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-white text-logo-vibrant hover:bg-purple-50 px-8 py-3 rounded-lg font-semibold transition-colors">
-              Call Us: +91 8605941731
+            <button onClick={handleCallUs} className="bg-white text-logo-vibrant hover:bg-purple-50 px-8 py-3 rounded-lg font-semibold transition-colors">
+              Call Us: +91 2422299688
             </button>
-            <button className="border-2 border-white text-white hover:bg-white hover:text-logo-vibrant px-8 py-3 rounded-lg font-semibold transition-colors">
+            <button onClick={handleRequestCallBack} className="border-2 border-white text-white hover:bg-white hover:text-logo-vibrant px-8 py-3 rounded-lg font-semibold transition-colors">
               Request Call Back
+            </button>
+            <button onClick={handleWhatsAppChat} className="bg-white text-logo-vibrant hover:bg-purple-50 px-8 py-3 rounded-lg font-semibold transition-colors">
+              Chat with Us: +91 8605941731
             </button>
           </div>
         </div>
 
             {/* Features */}
-            <section id="features" className="py-16 bg-white">
+            <section id="features" ref={featuresRef} className="py-16 bg-white">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center mb-12">
-                  <h2 className="text-3xl font-bold text-secondary-900 mb-4">Why Choose JIJAU Pathology Laboratory?</h2>
+                <div className="text-center mb-12 scroll-fade-in scroll-scale-up">
+                  <h2 className="text-3xl font-bold text-secondary-900 mb-4 scroll-slide-up">Why Choose JIJAU Pathology Laboratory?</h2>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                  <div className="text-center">
-                    <div className="bg-primary-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="text-center scroll-fade-in scroll-scale-up scroll-delay-0">
+                    <div className="bg-primary-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 scroll-float">
                       <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
-                    <h3 className="text-lg font-semibold text-secondary-900 mb-2">Trained Team</h3>
-                    <p className="text-secondary-600">Skilled professionals pathologist, Doctors & Technicians </p>
+                    <h3 className="text-lg font-semibold text-secondary-900 mb-2 scroll-slide-up">Trained Team</h3>
+                    <p className="text-secondary-600 scroll-slide-up scroll-delay-100">Skilled professionals pathologist, Doctors & Technicians </p>
                   </div>
 
-                  <div className="text-center">
-                    <div className="bg-success-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="text-center scroll-fade-in scroll-scale-up scroll-delay-100">
+                    <div className="bg-success-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 scroll-float">
                       <svg className="w-8 h-8 text-success-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                       </svg>
                     </div>
-                    <h3 className="text-lg font-semibold text-secondary-900 mb-2">100% Hygienic</h3>
-                    <p className="text-secondary-600">Strict hygiene protocols and sanitized equipment for every collection and testing</p>
+                    <h3 className="text-lg font-semibold text-secondary-900 mb-2 scroll-slide-up">100% Hygienic</h3>
+                    <p className="text-secondary-600 scroll-slide-up scroll-delay-100">Strict hygiene protocols and sanitized equipment for every collection and testing</p>
                   </div>
 
-                  <div className="text-center">
-                    <div className="bg-accent-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="text-center scroll-fade-in scroll-scale-up scroll-delay-200">
+                    <div className="bg-accent-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 scroll-float">
                       <svg className="w-8 h-8 text-accent-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
-                    <h3 className="text-lg font-semibold text-secondary-900 mb-2">Quick Collection</h3>
-                    <p className="text-secondary-600">Sample collection within 30 minutes of booking confirmation</p>
+                    <h3 className="text-lg font-semibold text-secondary-900 mb-2 scroll-slide-up">Quick Collection</h3>
+                    <p className="text-secondary-600 scroll-slide-up scroll-delay-100">Sample collection within 30 minutes of booking confirmation</p>
                   </div>
 
-                  <div className="text-center">
-                    <div className="bg-secondary-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="text-center scroll-fade-in scroll-scale-up scroll-delay-300">
+                    <div className="bg-secondary-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 scroll-float">
                       <svg className="w-8 h-8 text-secondary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                       </svg>
                     </div>
-                    <h3 className="text-lg font-semibold text-secondary-900 mb-2">Home Visits Till 7PM</h3>
-                    <p className="text-secondary-600">Flexible timing to accommodate your busy schedule</p>
+                    <h3 className="text-lg font-semibold text-secondary-900 mb-2 scroll-slide-up">Home Visits Till 7PM</h3>
+                    <p className="text-secondary-600 scroll-slide-up scroll-delay-100">Flexible timing to accommodate your busy schedule</p>
                   </div>
                 </div>
               </div>
@@ -1880,7 +2105,9 @@ function Home() {
                         </div>
                         <div>
                           <h5 className="font-semibold text-gray-900">Convenient Location</h5>
-                          <p className="text-gray-600 text-sm">Near Kavde Sonography Hospital, Kamgar Hospital Road, Shrirampur MIDC</p>
+                          <p className="text-gray-600 text-sm">Ward no 6, Kamgar Hospital Road,
+Near Dr. Kawade Diagnostic,
+Shrirampur, Maharashtra 413709</p>
                         </div>
                       </div>
                       <div className="flex items-start space-x-3">
@@ -2040,17 +2267,17 @@ function Home() {
             </section>
 
             {/* Process */}
-            <section className="py-16 relative overflow-hidden" style={{
+            <section ref={processRef} className="py-16 relative overflow-hidden" style={{
               background: 'linear-gradient(90deg, #f0e6ff 0%, #e6d9ff 100%)',
               width: '100vw',
               marginLeft: 'calc(-50vw + 50%)',
               marginRight: 'calc(-50vw + 50%)'
             }}>
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center mb-16">
-                  <span className="bg-purple-200 text-purple-800 text-sm font-medium px-4 py-1.5 rounded-full inline-block mb-4">Simple Steps</span>
-                  <h2 className="text-4xl md:text-5xl font-bold text-secondary-900 mb-4">Here's How The Process Works</h2>
-                  <p className="text-lg text-secondary-600 max-w-2xl mx-auto">Follow these simple steps to get your blood tests done from the comfort of your home</p>
+                <div className="text-center mb-16 scroll-fade-in scroll-scale-up">
+                  <span className="bg-purple-200 text-purple-800 text-sm font-medium px-4 py-1.5 rounded-full inline-block mb-4 scroll-float">Simple Steps</span>
+                  <h2 className="text-4xl md:text-5xl font-bold text-secondary-900 mb-4 scroll-slide-up">Here's How The Process Works</h2>
+                  <p className="text-lg text-secondary-600 max-w-2xl mx-auto scroll-slide-up scroll-delay-200">Follow these simple steps to get your blood tests done from the comfort of your home</p>
                 </div>
 
                 <div className="relative">
@@ -2059,7 +2286,7 @@ function Home() {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-8 relative" style={{ zIndex: 1 }}>
                     {/* Step 1 */}
-                    <div className="relative bg-white rounded-xl p-5 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+                    <div className="relative bg-white rounded-xl p-5 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 scroll-fade-in scroll-scale-up scroll-delay-0">
                       <div className="relative mb-6">
                         <div className="text-white w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold absolute -top-3 -left-3"
                            style={{ backgroundColor: '#7F55B1', boxShadow: '0 0 0 5px #f0e6ff' }}>1</div>
@@ -2074,7 +2301,7 @@ function Home() {
                     </div>
 
                     {/* Step 2 */}
-                    <div className="relative bg-white rounded-xl p-5 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+                    <div className="relative bg-white rounded-xl p-5 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 scroll-fade-in scroll-scale-up scroll-delay-100">
                       <div className="relative mb-6">
                         <div className="text-white w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold absolute -top-3 -left-3"
                            style={{ backgroundColor: '#7F55B1', boxShadow: '0 0 0 5px #f0e6ff' }}>2</div>
@@ -2090,7 +2317,7 @@ function Home() {
                     </div>
 
                     {/* Step 3 */}
-                    <div className="relative bg-white rounded-xl p-5 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+                    <div className="relative bg-white rounded-xl p-5 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 scroll-fade-in scroll-scale-up scroll-delay-200">
                       <div className="relative mb-6">
                         <div className="text-white w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold absolute -top-3 -left-3"
                            style={{ backgroundColor: '#7F55B1', boxShadow: '0 0 0 5px #f0e6ff' }}>3</div>
@@ -2105,7 +2332,7 @@ function Home() {
                     </div>
 
                     {/* Step 4 */}
-                    <div className="relative bg-white rounded-xl p-5 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+                    <div className="relative bg-white rounded-xl p-5 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 scroll-fade-in scroll-scale-up scroll-delay-300">
                       <div className="relative mb-6">
                         <div className="text-white w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold absolute -top-3 -left-3"
                            style={{ backgroundColor: '#7F55B1', boxShadow: '0 0 0 5px #f0e6ff' }}>4</div>
@@ -2120,7 +2347,7 @@ function Home() {
                     </div>
 
                     {/* Step 5 */}
-                    <div className="relative bg-white rounded-xl p-5 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+                    <div className="relative bg-white rounded-xl p-5 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 scroll-fade-in scroll-scale-up scroll-delay-400">
                       <div className="relative mb-6">
                         <div className="text-white w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold absolute -top-3 -left-3"
                            style={{ backgroundColor: '#7F55B1', boxShadow: '0 0 0 5px #f0e6ff' }}>5</div>

@@ -69,12 +69,20 @@ export class WhatsAppService {
 
   // Fallback method: Send via WhatsApp Web (if API fails)
   sendViaWhatsAppWeb(formData, type = 'booking') {
-    const { name, phone, address, testType, customTestType } = formData;
-    const finalTestType = testType === 'other' ? customTestType : testType;
-    
     let message = '';
     
-    if (type === 'booking') {
+    if (type === 'callback') {
+      message = `📞 *Callback Request*
+
+${formData.message}
+
+📅 *Request Time:* ${formData.timestamp}
+
+Please call back the patient as soon as possible.`;
+    } else if (type === 'booking') {
+      const { name, phone, address, testType, customTestType } = formData;
+      const finalTestType = testType === 'other' ? customTestType : testType;
+      
       message = `🏥 *New Test Booking Request*
 
 👤 *Patient Details:*

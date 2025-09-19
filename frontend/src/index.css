@@ -162,3 +162,125 @@ body { -webkit-font-smoothing:antialiased; font-family: Inter, ui-sans-serif, sy
 .cta--white svg { stroke: #ffffff; }
 .cta--white:before { background: rgba(255, 255, 255, 0.35); }
 .cta--white:hover:before { background: rgba(255, 255, 255, 0.5); }
+
+/* Scroll Animation Classes */
+.scroll-animate {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.6s ease-out;
+}
+
+.scroll-animate.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Slide animations */
+.slide-left {
+  opacity: 0;
+  transform: translateX(-50px);
+  transition: all 0.6s ease-out;
+}
+
+.slide-left.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.slide-right {
+  opacity: 0;
+  transform: translateX(50px);
+  transition: all 0.6s ease-out;
+}
+
+.slide-right.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Scale animation */
+.scale-animate {
+  opacity: 0;
+  transform: scale(0.9);
+  transition: all 0.6s ease-out;
+}
+
+.scale-animate.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Rotate animation */
+.rotate-animate {
+  opacity: 0;
+  transform: rotate(-10deg) scale(0.9);
+  transition: all 0.6s ease-out;
+}
+
+.rotate-animate.visible {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+}
+
+/* Bounce animation */
+.bounce-animate {
+  opacity: 0;
+  transform: translateY(50px);
+  transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.bounce-animate.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger animation delays */
+.delay-100 { transition-delay: 0.1s; }
+.delay-200 { transition-delay: 0.2s; }
+.delay-300 { transition-delay: 0.3s; }
+.delay-400 { transition-delay: 0.4s; }
+.delay-500 { transition-delay: 0.5s; }
+
+/* Parallax effect */
+.parallax-bg {
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+/* Floating animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+.float-animation {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Pulse animation for CTAs */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(100, 46, 170, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(100, 46, 170, 0.6); }
+}
+
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Gradient text animation */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.gradient-text-animate {
+  background: linear-gradient(45deg, #642EAA, #4A1F7A, #2D1B69, #642EAA);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient-shift 3s ease infinite;
+}
