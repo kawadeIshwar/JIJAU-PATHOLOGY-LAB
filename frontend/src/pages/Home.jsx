@@ -781,13 +781,13 @@ function Home() {
             <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-purple-900 leading-tight mb-2">
               Preventive Health <span className="bg-gradient-to-r from-emerald-300 via-teal-300 to-cyan-300 bg-clip-text text-transparent">Packages</span>
             </h2>
-            <h3 className="text-xl sm:text-2xl md:text-3xl tracking-wide text-gray-800 mb-2">
-              STAY AHEAD WITH REGULAR CHECKUPS
+            <h3 className="text-lg sm:text-xl md:text-2xl tracking-wide text-gray-800 mb-2">
+              STAY AHEAD WITH REGULAR CHECKUPS 
             </h3>
             <p className="text-base sm:text-lg md:text-xl text-purple-700 max-w-2xl mb-4">
-              SPECIALLY DESIGNED PACKAGES TO MONITOR YOUR OVERALL HEALTH
+              Specialy Designed Packages to Monitor Your Overall Health
             </p>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-emerald-700 font-bold shadow-lg mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-emerald-700 font-bold shadow-lg mb-6 bg-yellow-400">
               <span className="text-sm">Starting from</span>
               <span className="text-lg">₹599/-</span>
             </div>
@@ -816,7 +816,7 @@ function Home() {
             <h2 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-purple-900 leading-tight mb-3">
               Safe & <span className="bg-gradient-to-r from-emerald-300 via-teal-300 to-cyan-300 bg-clip-text text-transparent">Hygienic</span>
             </h2>
-            <h3 className="text-2xl sm:text-3xl md:text-4xl tracking-wide text-gray-800 mb-4">
+            <h3 className="text-lg sm:text-2xl md:text-3xl tracking-wide text-gray-800 mb-4">
               YOUR SAFETY IS OUR TOP PRIORITY
             </h3>
             <p className="text-lg sm:text-xl md:text-2xl text-purple-700 max-w-2xl mb-8">
