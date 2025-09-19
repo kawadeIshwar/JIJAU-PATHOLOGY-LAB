@@ -1,8 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react'
+import img1 from '../assets/image1.png'
+import img2 from '../assets/image2.png'
+import img3 from '../assets/image3.png'
+import img4 from '../assets/image4.png'
 import { Link } from 'react-router-dom'
-import ImageCarousel from '../ui/ImageCarousel'
-import SlidingText from '../ui/SlidingText'
 import Logo from '../assets/Logo.png'
+// Hero backgrounds removed: using theme gradients instead of images
+import image17 from '../assets/image17.jpg'
+import { whatsappService } from '../utils/whatsappService'
 
 
 
@@ -17,10 +22,14 @@ function Home() {
   const [showMorePackages, setShowMorePackages] = useState(false)
   const packagesTopRef = useRef(null)
   const bookingRef = useRef(null)
+  const allTestsRef = useRef(null)
   const [showMoreHematology, setShowMoreHematology] = useState(false)
   const [showMoreBiochemistry, setShowMoreBiochemistry] = useState(false)
   const [showMoreSerology, setShowMoreSerology] = useState(false)
   const [showMoreHistopathology, setShowMoreHistopathology] = useState(false)
+  const [showMoreReviews, setShowMoreReviews] = useState(false)
+  const [toast, setToast] = useState({ show: false, type: 'success', message: '' })
+  const [formBanner, setFormBanner] = useState({ show: false, type: 'success', message: '' })
   
   // States from Tests.jsx
   const [tests, setTests] = useState([]);
@@ -47,6 +56,9 @@ function Home() {
     { value: 'urine', label: 'Urine Tests' }
   ];
   const [menuOpen, setMenuOpen] = useState(false);
+  const [currentBg, setCurrentBg] = useState(0)
+  const [showBookingModal, setShowBookingModal] = useState(false)
+  const [modalEnter, setModalEnter] = useState(false)
 
 
   const scrollToSection = (ref) => {
@@ -69,22 +81,101 @@ function Home() {
     return () => document.head.removeChild(style);
   }, []);
 
-  const handleBookingSubmit = (e) => {
-    e.preventDefault()
-    // Handle booking submission
-    const finalTestType = bookingForm.testType === 'other' ? bookingForm.customTestType : bookingForm.testType
-    alert('Booking request submitted! We will call you shortly.')
-    setBookingForm({ 
-      name: '', 
-      phone: '', 
-      address: '', 
-      testType: '', 
-      customTestType: '' 
-    })
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setCurrentBg(prev => (prev + 1) % 4)
+    }, 6000)
+    return () => clearInterval(intervalId)
+  }, [])
+
+  // Delay showing the booking modal on initial load (e.g., 7 seconds)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => setShowBookingModal(true), 7000)
+    return () => clearTimeout(timeoutId)
+  }, [])
+
+  // Animate modal on open
+  useEffect(() => {
+    if (showBookingModal) {
+      const id = requestAnimationFrame(() => setModalEnter(true))
+      return () => cancelAnimationFrame(id)
+    } else {
+      setModalEnter(false)
+    }
+  }, [showBookingModal])
+
+  const handleBookingSubmitModal = (e) => {
+    handleBookingSubmit(e)
+    setShowBookingModal(false)
   }
 
-  const handleBookTest = (test) => {
-    alert(`Booking ${test.name} for ₹${test.price}. We will contact you shortly!`);
+  const handleBookingSubmit = async (e) => {
+    e.preventDefault()
+    
+    try {
+      // Send WhatsApp notification to admin via API
+      const result = await whatsappService.sendBookingNotification(bookingForm)
+      
+      if (result.success) {
+        setToast({ show: true, type: 'success', message: 'Booking submitted. Admin notified via WhatsApp!' })
+        setFormBanner({ show: true, type: 'success', message: 'Thanks! Your booking was received. Our team will contact you shortly.' })
+        setTimeout(() => setFormBanner(prev => ({ ...prev, show: false })), 4000)
+        
+        // Reset form
+        setBookingForm({ 
+          name: '', 
+          phone: '', 
+          address: '', 
+          testType: '', 
+          customTestType: '' 
+        })
+      } else {
+        // Stay on page; show error
+        setToast({ show: true, type: 'error', message: 'Could not notify admin. Please try again shortly.' })
+        setFormBanner({ show: true, type: 'error', message: 'We could not notify our team right now. Please try again.' })
+        setTimeout(() => setFormBanner(prev => ({ ...prev, show: false })), 5000)
+        
+        // Reset form
+        setBookingForm({ 
+          name: '', 
+          phone: '', 
+          address: '', 
+          testType: '', 
+          customTestType: '' 
+        })
+      }
+    } catch (error) {
+      console.error('Error sending WhatsApp notification:', error)
+      // Stay on page; show error
+      setToast({ show: true, type: 'error', message: 'Could not notify admin. Please try again shortly.' })
+      setFormBanner({ show: true, type: 'error', message: 'We could not notify our team right now. Please try again.' })
+      setTimeout(() => setFormBanner(prev => ({ ...prev, show: false })), 5000)
+      
+      // Reset form
+      setBookingForm({ 
+        name: '', 
+        phone: '', 
+        address: '', 
+        testType: '', 
+        customTestType: '' 
+      })
+    }
+  }
+
+  const handleBookTest = async (test) => {
+    try {
+      // Send WhatsApp notification to admin via API
+      const result = await whatsappService.sendTestBookingNotification(test)
+      
+      if (result.success) {
+        setToast({ show: true, type: 'success', message: `Booked ${test.name}. Admin notified via WhatsApp!` })
+      } else {
+        setToast({ show: true, type: 'error', message: 'Could not notify admin. Please try again shortly.' })
+      }
+    } catch (error) {
+      console.error('Error sending WhatsApp notification:', error)
+      setToast({ show: true, type: 'error', message: 'Could not notify admin. Please try again shortly.' })
+    }
   }
 
   // Filter and sort tests
@@ -291,8 +382,214 @@ function Home() {
     { name: 'Fine Needle Aspiration Cytology (FNAC)', desc: 'Cytology of needle-aspirated cells from masses for diagnosis', price: '₹3,500' }
   ]
 
+  const reviews = [
+    {
+      id: 1,
+      name: "Ketan Gaidhane",
+      role: "Local Guide",
+      rating: 5,
+      date: "7 months ago",
+      review: "Good and fast Service. Advanced Research Dynamic Solutions. Innovative Lab Precision Testing.",
+      avatar: "KG"
+    },
+    {
+      id: 2,
+      name: "Eshwari Badakh",
+      role: "4 reviews",
+      rating: 5,
+      date: "4 months ago",
+      review: "Very cooperative and caring team, they did all the necessary tests and created the reports with highest accuracy even late night, so that the right treatment for me to start immediately. Thanks 🙏",
+      avatar: "EB"
+    },
+    {
+      id: 3,
+      name: "Shriganesh Admane",
+      role: "3 reviews",
+      rating: 5,
+      date: "7 months ago",
+      review: "I had an excellent experience with Jijau Pathology! The service is top-notch, and the accuracy of the tests is impressive. The doctors and nurses are extremely knowledgeable and highly professional, making the entire process smooth and reassuring. I highly recommend them for anyone looking for reliable and efficient pathology services. Truly a place you can trust!",
+      avatar: "SA"
+    },
+    {
+      id: 4,
+      name: "Dhananjay Khandagale",
+      role: "1 review",
+      rating: 5,
+      date: "7 months ago",
+      review: "Report Result is always correct. Staff Behaviour is also good for patients. Report Process is fast and correct. To use best Technology for Report sending patients. Educated Staff. Proper Cleaning Blood Sample instrument. All test are available in this lab. Best lab for shrirampur in blood sample testing always visit to test your blood sample in Jijau Pathology lab Shrirampur",
+      avatar: "DK"
+    },
+    {
+      id: 5,
+      name: "Satish Jha",
+      role: "3 reviews",
+      rating: 5,
+      date: "7 months ago",
+      review: "I'm really impressed with Jijau Pathology! Dr. Pavan Bhand and the staff are amazing—very knowledgeable and professional. The tests are accurate, and the whole process is smooth. Highly recommend this place for anyone looking for reliable pathology services!",
+      avatar: "SJ"
+    },
+    {
+      id: 6,
+      name: "Gajanan Shinde",
+      role: "2 reviews",
+      rating: 5,
+      date: "7 months ago",
+      review: "Good health care and service provider as well knowledgeable staff. Affordable and Happy with service.",
+      avatar: "GS"
+    },
+    {
+      id: 7,
+      name: "Harshal Chavan",
+      role: "5 reviews",
+      rating: 5,
+      date: "7 months ago",
+      review: "Nice experience in my first visit in Jijau Pathology Lab.",
+      avatar: "HC"
+    },
+    {
+      id: 8,
+      name: "Komal Anhad",
+      role: "1 review",
+      rating: 5,
+      date: "7 months ago",
+      review: "Provides accurate and timely diagnostic services with a professional and caring approach.",
+      avatar: "KA"
+    },
+    {
+      id: 9,
+      name: "Manoj Raut",
+      role: "1 review",
+      rating: 5,
+      date: "7 months ago",
+      review: "Fast report good service",
+      avatar: "MR"
+    },
+    {
+      id: 10,
+      name: "Kaustubh Janrao",
+      role: "1 review",
+      rating: 5,
+      date: "7 months ago",
+      review: "Best Patient Counselling",
+      avatar: "KJ"
+    }
+  ]
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-purple-50 via-white to-purple-100" style={{ paddingBottom: '0', paddingTop: '80px' }}>
+      {toast.show && (
+        <div className={`fixed top-24 left-1/2 -translate-x-1/2 z-[70] px-4 py-3 rounded-lg shadow-lg text-white ${toast.type === 'success' ? 'bg-green-600' : toast.type === 'info' ? 'bg-blue-600' : 'bg-red-600'}`} onAnimationEnd={() => {}}>
+          <div className="flex items-center gap-3">
+            <span className="font-semibold">{toast.type === 'success' ? 'Success' : toast.type === 'info' ? 'Info' : 'Error'}</span>
+            <span className="opacity-90">{toast.message}</span>
+            <button className="ml-3 text-white/80 hover:text-white" onClick={() => setToast({ ...toast, show: false })}>✕</button>
+          </div>
+        </div>
+      )}
+      {/* Booking Modal */}
+      {showBookingModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          <div className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${modalEnter ? 'opacity-100' : 'opacity-0'}`} onClick={() => setShowBookingModal(false)}></div>
+          <div className={`relative bg-white w-[95vw] max-w-4xl rounded-2xl shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2 z-[61] transform transition-all duration-300 ease-out ${modalEnter ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-4 scale-95'}`}>
+            {/* Left Illustration */}
+            <div className="hidden md:block bg-white p-0">
+              <img src={image17} alt="Booking illustration" className="w-full h-full object-contain" />
+            </div>
+            {/* Right Form */}
+            <div className="p-6 sm:p-8">
+              <button onClick={() => setShowBookingModal(false)} className="absolute right-3 top-3 text-gray-500 hover:text-gray-700" aria-label="Close">
+                ✕
+              </button>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Book Your Test</h3>
+              <p className="text-gray-600 mb-6">Fill the form and we'll call you within 15 minutes</p>
+              <form onSubmit={handleBookingSubmitModal} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Full Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={bookingForm.name}
+                      onChange={(e) => setBookingForm({ ...bookingForm, name: e.target.value })}
+                      className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:border-purple-500 focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Phone Number *</label>
+                    <input
+                      type="tel"
+                      required
+                      value={bookingForm.phone}
+                      onChange={(e) => setBookingForm({ ...bookingForm, phone: e.target.value })}
+                      className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:border-purple-500 focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                      placeholder="Enter your phone number"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Complete Address *</label>
+                  <textarea
+                    required
+                    value={bookingForm.address}
+                    onChange={(e) => setBookingForm({ ...bookingForm, address: e.target.value })}
+                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:border-purple-500 focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                    placeholder="Enter your complete address"
+                    rows="2"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Test Type *</label>
+                    <select
+                      required
+                      value={bookingForm.testType}
+                      onChange={(e) => setBookingForm({ ...bookingForm, testType: e.target.value })}
+                      className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:border-purple-500 focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                    >
+                      <option value="">Select test type</option>
+                      <option value="cbc">Complete Blood Count</option>
+                      <option value="lft">Liver Function Test</option>
+                      <option value="thyroid">Thyroid Test</option>
+                      <option value="diabetes">Diabetes Panel</option>
+                      <option value="lipid">Lipid Profile</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  {bookingForm.testType === 'other' && (
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Specify Test Type *</label>
+                      <input
+                        type="text"
+                        required
+                        value={bookingForm.customTestType}
+                        onChange={(e) => setBookingForm({ ...bookingForm, customTestType: e.target.value })}
+                        className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:border-purple-500 focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                        placeholder="Enter the test type you need"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-3 px-6 text-white rounded-lg font-bold text-base transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  style={{ backgroundColor: '#642EAA' }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#4A1F7A'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = '#642EAA'}
+                >
+                  Book Test
+                </button>
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  *All fields are mandatory. Terms and conditions apply.
+                </p>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Header */}
 <header
       className="fixed w-full top-0 z-50 backdrop-blur-md border-b border-purple-200"
@@ -328,21 +625,19 @@ function Home() {
                 rel="noopener noreferrer"
                 className="text-white hover:text-purple-200 px-4 py-2 text-sm font-semibold transition-all duration-300 hover:bg-white/20 rounded-lg inline-flex items-center gap-2"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 32 32"
-                  className="w-4 h-4"
-                  fill="currentColor"
-                >
-                  <path d="M19.11 17.12a5.61 5.61 0 0 1-2.41-.61c-.74-.35-1.58-.78-2.58-1.79s-2-2.53-2.31-3.2a6.1 6.1 0 0 1-.61-2.41 2.67 2.67 0 0 1 .86-2 1 1 0 0 1 .72-.32h.54a.68.68 0 0 1 .5.41l.77 1.8a.67.67 0 0 1 0 .52 1.77 1.77 0 0 1-.25.4c-.14.16-.28.34-.39.46a.84.84 0 0 0-.17.33c0 .12 0 .25.19.49a9.81 9.81 0 0 0 1.76 2.19 8.64 8.64 0 0 0 2 1.38c.24.11.37.1.5 0a3.34 3.34 0 0 0 .35-.3l.1-.1a.67.67 0 0 1 .67-.17l1.84.77a.68.68 0 0 1 .41.5v.54a1 1 0 0 1-.32.72 2.69 2.69 0 0 1-2.01.86Z" />
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
                 </svg>
                 +91 8605941731
               </a>
               <a
                 href="tel:+91 02422299688"
-                className="text-white hover:text-purple-200 py-2 text-sm font-semibold transition-all duration-300 hover:bg-white/20 rounded-lg inline-flex items-center gap-2"
+                className="text-white hover:text-purple-200 px-4 py-2 text-sm font-semibold transition-all duration-300 hover:bg-white/20 rounded-lg inline-flex items-center gap-2"
               >
-                📞 +91 2422299688
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+                +91 2422299688
               </a>
               <a
                 href="https://maps.app.goo.gl/MJEnATgUghqZ5SqZ9"
@@ -350,7 +645,11 @@ function Home() {
                 rel="noopener noreferrer"
                 className="text-white hover:text-purple-200 px-4 py-2 text-sm font-semibold transition-all duration-300 hover:bg-white/20 rounded-lg inline-flex items-center gap-2"
               >
-                📍 Find Us
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Find Us
               </a>
             </div>
           </nav>
@@ -427,53 +726,170 @@ function Home() {
         </div>
       )}
     </header>
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-purple-50 via-white to-purple-100">
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          {/* Top Center - Main Heading */}
-          <div className="text-center mb-8">
-            <h1 className="text-4xl lg:text-6xl font-extrabold leading-tight text-transparent bg-clip-text bg-gradient-to-r from-[#9760de] via-[#7956a8] to-[#8647dd] mb-3" style={{ textShadow: '0 2px 6px rgba(0,0,0,0.25)' }}>
-              Your Health, Our Priority
+      {/* Hero Section - Fullscreen Sliding Background */}
+      <section className="relative w-screen min-h-[70vh] sm:min-h-[80vh] md:min-h-[90vh] lg:min-h-screen overflow-hidden pt-8 md:pt-10 lg:pt-14">
+  {/* Background slides (white), 4 slides crossfade */}
+  {[0, 1, 2, 3].map((index) => (
+    <div key={index} className={`absolute inset-0 transition-opacity duration-1000 ${currentBg === index ? 'opacity-100' : 'opacity-0'}`}>
+      <div className="absolute inset-0 bg-white"></div>
+    </div>
+  ))}
+
+  {/* Hero Content Overlay */}
+  <div className="relative z-10 h-full flex items-center">
+    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center justify-items-center md:justify-items-start h-full -mt-6 md:-mt-4 lg:mt-0">
+        {/* Left: Slide content blocks */}
+        <div className="relative">
+          {/* Slide 1: Accurate Diagnostics */}
+          <div className={`max-w-3xl transition-opacity duration-700 text-center md:text-left mx-auto md:mx-0 ${currentBg === 0 ? 'opacity-100' : 'opacity-0 pointer-events-none absolute'}`}>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold text-purple-900 mb-2 sm:mb-3 leading-tight">
+              Accurate Diagnostics
             </h1>
-            <p className="text-xl text-purple-600 leading-relaxed max-w-4xl mx-auto">
-              Get accurate blood test results from the comfort of your home.
-              Our certified lab technicians ensure precision, speed, and reliability.
+            <h3 className="text-xl sm:text-2xl md:text-3xl text-gray-700 md:text-gray-800 mb-3">
+              Trusted Lab Results You Can Rely On
+            </h3>
+            <p className="text-base sm:text-lg md:text-xl text-purple-700 max-w-2xl mb-6 md:mb-8">
+              State-of-the-art equipment and certified technicians ensure accurate results
             </p>
-          </div>
-
-          {/* Main Content Grid */}
-          <div className="bg-white rounded-2xl shadow-2xl p-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-              {/* Left Side - Image Carousel */}
-              <div className="order-first">
-                <ImageCarousel />
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-8">
+              <a href="#all-tests" className="inline-flex items-center justify-center px-6 py-3 rounded-lg font-semibold text-black bg-gradient-to-r from-yellow-300 to-orange-400 hover:from-yellow-400 hover:to-orange-500 transition-colors shadow-lg">
+                View Tests
+              </a>
+              <a href="#packages" className="inline-flex items-center justify-center px-6 py-3 rounded-lg font-semibold text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50 transition-colors">
+                View Packages
+              </a>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+              <div className="bg-white border border-gray-200 text-gray-900 rounded-xl px-4 py-3 shadow-sm">
+                <div className="text-lg sm:text-xl font-bold">50K+</div>
+                <div className="text-xs sm:text-sm text-gray-500">Happy Patients</div>
               </div>
-
-              {/* Right Side - Sliding Text Content */}
-              <div className="order-last lg:order-last">
-                <SlidingText />
+              <div className="bg-white border border-gray-200 text-gray-900 rounded-xl px-4 py-3 shadow-sm">
+                <div className="text-lg sm:text-xl font-bold">99.8%</div>
+                <div className="text-xs sm:text-sm text-gray-500">Report Accuracy</div>
+              </div>
+              <div className="bg-white border border-gray-200 text-gray-900 rounded-xl px-4 py-3 shadow-sm col-span-2 sm:col-span-1">
+                <div className="text-lg sm:text-xl font-bold">3–6 hrs</div>
+                <div className="text-xs sm:text-sm text-gray-500">Fast Reports</div>
               </div>
             </div>
           </div>
 
-          {/* Bottom Center - CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mt-16">
-            <button
-              onClick={() => scrollToSection(bookingRef)}
-              className="bg-gradient-to-r from-[#7e47c2] to-[#7F55B1] text-white px-8 py-4 rounded-xl font-bold text-lg hover:from-[#2B0A57] hover:to-[#5B2E98] transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1">
-              Book Test Now
-            </button>
-            <button
-              onClick={() => scrollToSection(packagesTopRef)}
-              className="border-2 border-black text-black px-8 py-4 rounded-xl font-bold text-lg hover:bg-gradient-to-r from-[#3B0F70] to-[#7F55B1] hover:text-white transition-all duration-300 transform hover:-translate-y-1">
-              View All Tests
-            </button>
+          {/* Slide 2: Preventive Health Packages */}
+          <div className={`max-w-3xl transition-opacity duration-700 text-center md:text-left mx-auto md:mx-0 ${currentBg === 1 ? 'opacity-100' : 'opacity-0 pointer-events-none absolute'}`}>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-purple-900 leading-tight mb-2">
+              Preventive Health <span className="bg-gradient-to-r from-emerald-300 via-teal-300 to-cyan-300 bg-clip-text text-transparent">Packages</span>
+            </h2>
+            <h3 className="text-xl sm:text-2xl md:text-3xl tracking-wide text-gray-800 mb-2">
+              STAY AHEAD WITH REGULAR CHECKUPS
+            </h3>
+            <p className="text-base sm:text-lg md:text-xl text-purple-700 max-w-2xl mb-4">
+              SPECIALLY DESIGNED PACKAGES TO MONITOR YOUR OVERALL HEALTH
+            </p>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-emerald-700 font-bold shadow-lg mb-6">
+              <span className="text-sm">Starting from</span>
+              <span className="text-lg">₹599/-</span>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-8">
+              <a href="#packages" className="inline-flex items-center justify-center px-6 py-3 rounded-lg font-semibold text-black bg-gradient-to-r from-emerald-300 to-cyan-300 hover:from-emerald-400 hover:to-cyan-400 transition-colors shadow-lg">
+                Explore Packages
+              </a>
+              <a href="#booking" className="inline-flex items-center justify-center px-6 py-3 rounded-lg font-semibold text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50 transition-colors">
+                Book a Checkup
+              </a>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              <div className="bg-white border border-gray-200 text-gray-900 rounded-xl px-4 py-3 shadow-sm">
+                <div className="text-sm text-gray-500">Includes</div>
+                <div className="text-base sm:text-lg font-semibold">CBC, LFT, RFT</div>
+              </div>
+              <div className="bg-white border border-gray-200 text-gray-900 rounded-xl px-4 py-3 shadow-sm">
+                <div className="text-sm text-gray-500">Add-ons</div>
+                <div className="text-base sm:text-lg font-semibold">HbA1c, TSH, Lipids</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Slide 3: Safe & Hygienic */}
+          <div className={`max-w-3xl transition-opacity duration-700 text-center md:text-left mx-auto md:mx-0 ${currentBg === 2 ? 'opacity-100' : 'opacity-0 pointer-events-none absolute'}`}>
+            <h2 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-purple-900 leading-tight mb-3">
+              Safe & <span className="bg-gradient-to-r from-emerald-300 via-teal-300 to-cyan-300 bg-clip-text text-transparent">Hygienic</span>
+            </h2>
+            <h3 className="text-2xl sm:text-3xl md:text-4xl tracking-wide text-gray-800 mb-4">
+              YOUR SAFETY IS OUR TOP PRIORITY
+            </h3>
+            <p className="text-lg sm:text-xl md:text-2xl text-purple-700 max-w-2xl mb-8">
+              Strict sanitization and safety protocols followed for every test
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 mb-10">
+              <a href="#booking" className="inline-flex items-center justify-center px-8 py-4 rounded-lg font-semibold text-black bg-gradient-to-r from-emerald-300 to-cyan-300 hover:from-emerald-400 hover:to-cyan-400 transition-colors shadow-lg">
+                Book Home Collection
+              </a>
+              <a href="#features" className="inline-flex items-center justify-center px-8 py-4 rounded-lg font-semibold text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50 transition-colors">
+                See Safety Protocols
+              </a>
+            </div>
+            <div className="grid grid-cols-2 gap-4 sm:gap-6">
+              <div className="bg-white border border-gray-200 text-gray-900 rounded-xl px-6 py-4 shadow-sm">
+                <div className="text-sm text-gray-500">PPE</div>
+                <div className="text-lg sm:text-xl font-semibold">Masks & Gloves</div>
+              </div>
+              <div className="bg-white border border-gray-200 text-gray-900 rounded-xl px-6 py-4 shadow-sm">
+                <div className="text-sm text-gray-500">Sanitization</div>
+                <div className="text-lg sm:text-xl font-semibold">Before & After Visit</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Slide 4: Home Sample Collection */}
+          <div className={`max-w-3xl transition-opacity duration-700 text-center md:text-left mx-auto md:mx-0 ${currentBg === 3 ? 'opacity-100' : 'opacity-0 pointer-events-none absolute'}`}>
+            <h2 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-purple-900 leading-tight mb-3">
+              Home Sample Collection
+            </h2>
+            <h3 className="text-2xl sm:text-3xl md:text-4xl tracking-wide text-gray-800 mb-4">
+              Convenient, Safe & Fast Sample Collection at Your Doorstep
+            </h3>
+            <p className="text-lg sm:text-xl md:text-2xl text-purple-700 max-w-2xl mb-8">
+              Enjoy doorstep sample pickup by certified phlebotomists.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 mb-10">
+              <a href="#booking" className="inline-flex items-center justify-center px-8 py-4 rounded-lg font-semibold text-black bg-gradient-to-r from-sky-300 to-emerald-300 hover:from-sky-400 hover:to-emerald-400 transition-colors shadow-lg">
+                Book Now
+              </a>
+              <a href="#features" className="inline-flex items-center justify-center px-8 py-4 rounded-lg font-semibold text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50 transition-colors">
+                How It Works
+              </a>
+            </div>
+            <div className="grid grid-cols-2 gap-4 sm:gap-6">
+              <div className="bg-white border border-gray-200 text-gray-900 rounded-xl px-6 py-4 shadow-sm">
+                <div className="text-sm text-gray-500">Availability</div>
+                <div className="text-lg sm:text-xl font-semibold">7 days a week</div>
+              </div>
+              <div className="bg-white border border-gray-200 text-gray-900 rounded-xl px-6 py-4 shadow-sm">
+                <div className="text-sm text-gray-500">Turnaround</div>
+                <div className="text-lg sm:text-xl font-semibold">Reports in 3–6 hrs</div>
+              </div>
+            </div>
           </div>
         </div>
-      </section>
+
+        {/* Right: Slide images, crossfading */}
+        <div className="relative w-full h-64 sm:h-80 md:h-[420px] lg:h-[520px] flex items-center justify-center">
+          {[img1, img2, img3, img4].map((image, index) => (
+            <div key={index} className={`absolute inset-0 flex items-center justify-center transition-opacity duration-700 ${currentBg === index ? 'opacity-100' : 'opacity-0'}`}>
+              <img src={image} alt={`Slide ${index + 1}`} className="max-h-full max-w-full object-contain" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 
       {/* Booking Form */}
-      <section ref={bookingRef} id="booking" className="py-20 bg-gradient-to-br from-purple-50 via-white to-purple-100">
+      <section ref={bookingRef} id="booking" className="pt-4 pb-12 md:py-20 bg-gradient-to-br from-purple-50 via-white to-purple-100">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold mb-4" style={{ backgroundColor: '#E8D5F2', color: '#642EAA' }}>
@@ -539,6 +955,14 @@ function Home() {
 
             {/* Right Side - Form */}
             <div className="bg-purple-200 rounded-3xl p-8 shadow-2xl border border-purple-100">
+              {formBanner.show && (
+                <div className={`mb-4 px-4 py-3 rounded-lg ${formBanner.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                  <div className="flex items-start justify-between gap-4">
+                    <p className="text-sm">{formBanner.message}</p>
+                    <button className="text-current/60 hover:text-current" onClick={() => setFormBanner(prev => ({ ...prev, show: false }))}>✕</button>
+                  </div>
+                </div>
+              )}
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Book Your Test</h3>
                 <p className="text-gray-600">Fill the form and we'll call you within 15 minutes</p>
@@ -626,7 +1050,7 @@ function Home() {
                   Book Test
                 </button>
                 <p className="text-xs text-gray-500 mt-2 text-center">
-                  *All fields are mandatory. Home sample collection charges will be applicable.
+                  *All fields are mandatory. Terms and conditions apply.
                 </p>
               </form>
             </div>
@@ -635,7 +1059,7 @@ function Home() {
       </section>
 
       {/* Health Packages */}
-      <section className="py-20 relative overflow-hidden bg-gradient-to-br from-purple-50 via-white to-indigo-50" ref={packagesTopRef}>
+      <section id="packages" className="py-20 relative overflow-hidden bg-gradient-to-br from-purple-50 via-white to-indigo-50" ref={packagesTopRef}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-16">
             <div className="inline-flex items-center px-6 py-3 rounded-full text-sm font-semibold mb-6" style={{ backgroundColor: '#E8D5F2', color: '#642EAA' }}>
@@ -1181,7 +1605,7 @@ function Home() {
             </details>
 
             {/* All Tests Section */}
-            <section className="py-16 bg-secondary-50">
+            <section ref={allTestsRef} className="py-16 bg-secondary-50">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-12">
                   <h2 className="text-3xl font-bold text-secondary-900 mb-4">All Available Tests</h2>
@@ -1345,6 +1769,219 @@ function Home() {
               </div>
             </section>
 
+            {/* About Us Section */}
+            <section className="py-20 w-full" style={{ backgroundColor: 'rgb(99, 44, 118)', width: '100vw', marginLeft: 'calc(-50vw + 50%)', marginRight: 'calc(-50vw + 50%)' }}>
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="text-center mb-16">
+                  <div className="inline-flex items-center px-6 py-3 rounded-full text-sm font-semibold mb-6" style={{ backgroundColor: '#E8D5F2', color: '#642EAA' }}>
+                    <span className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: '#642EAA' }}></span>
+                    About Us
+                  </div>
+                  <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6">
+                    Your Trusted Healthcare Partner
+                  </h2>
+                  <p className="text-xl text-gray-200 max-w-4xl mx-auto leading-relaxed">
+                    Founded by Mr. Pavan Eknath Bhand with a vision to provide reliable, affordable, and advanced diagnostic services to the people of Shrirampur and nearby areas.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-16">
+                  <div>
+                    <h3 className="text-3xl font-bold text-white mb-6">Our Story</h3>
+                    <p className="text-lg text-gray-200 mb-6 leading-relaxed">
+                      Since our establishment in 2022, we have grown into a trusted name for precise testing, hygienic facilities, and patient-friendly service. At Jijau Pathology Lab, we believe that accurate diagnosis is the first step towards a healthy life, and we are proud to be your trusted partner in healthcare.
+                    </p>
+                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-purple-100">
+                      <h4 className="text-xl font-bold text-gray-900 mb-4">Our Mission</h4>
+                      <p className="text-gray-600">To empower patients and doctors with accurate diagnostic results that support timely treatment and better health outcomes.</p>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-2xl p-8 shadow-xl">
+                    <h4 className="text-2xl font-bold text-gray-900 mb-6">Why Choose Us</h4>
+                    <div className="space-y-4">
+                      <div className="flex items-start space-x-3">
+                        <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-sm font-bold">✓</span>
+                        </div>
+                        <div>
+                          <h5 className="font-semibold text-gray-900">Founded by Mr. Pavan Eknath Bhand</h5>
+                          <p className="text-gray-600 text-sm">Committed to community healthcare</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start space-x-3">
+                        <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-sm font-bold">✓</span>
+                        </div>
+                        <div>
+                          <h5 className="font-semibold text-gray-900">Strong Reputation</h5>
+                          <p className="text-gray-600 text-sm">Positive feedback from patients</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start space-x-3">
+                        <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-sm font-bold">✓</span>
+                        </div>
+                        <div>
+                          <h5 className="font-semibold text-gray-900">Convenient Location</h5>
+                          <p className="text-gray-600 text-sm">Near Kavde Sonography Hospital, Kamgar Hospital Road, Shrirampur MIDC</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start space-x-3">
+                        <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-sm font-bold">✓</span>
+                        </div>
+                        <div>
+                          <h5 className="font-semibold text-gray-900">Always Available</h5>
+                          <p className="text-gray-600 text-sm">Open all days to serve patients without delay</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                  <div className="text-center">
+                    <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow h-full">
+                      <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <h4 className="text-lg font-bold text-gray-900 mb-2">Accuracy & Integrity</h4>
+                      <p className="text-gray-600 text-sm">Delivering test results you can trust</p>
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow h-full">
+                      <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                      </div>
+                      <h4 className="text-lg font-bold text-gray-900 mb-2">Patient-Centric Care</h4>
+                      <p className="text-gray-600 text-sm">Friendly staff and comfortable experience</p>
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow h-full">
+                      <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                      </div>
+                      <h4 className="text-lg font-bold text-gray-900 mb-2">Safety & Hygiene</h4>
+                      <p className="text-gray-600 text-sm">Maintaining the highest standards of cleanliness</p>
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow h-full">
+                      <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                        </svg>
+                      </div>
+                      <h4 className="text-lg font-bold text-gray-900 mb-2">Accessibility & Affordability</h4>
+                      <p className="text-gray-600 text-sm">Quality healthcare that everyone can reach</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-16 bg-white rounded-2xl p-8 shadow-xl">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">Our Services</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                        </svg>
+                      </div>
+                      <h4 className="font-semibold text-gray-900 mb-2">Comprehensive Testing</h4>
+                      <p className="text-gray-600 text-sm">A wide range of pathology tests including blood, urine, stool, serology and other tests</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                      </div>
+                      <h4 className="font-semibold text-gray-900 mb-2">Health Check-up Packages</h4>
+                      <p className="text-gray-600 text-sm">Designed for preventive care and early detection</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <h4 className="font-semibold text-gray-900 mb-2">Modern Equipment</h4>
+                      <p className="text-gray-600 text-sm">Use of modern equipment and strict quality control protocols for reliable results</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Reviews Section */}
+            <section className="py-16 bg-white">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="text-center mb-12">
+                  <div className="inline-flex items-center px-6 py-3 rounded-full text-sm font-semibold mb-6" style={{ backgroundColor: '#E8D5F2', color: '#642EAA' }}>
+                    <span className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: '#642EAA' }}></span>
+                    Customer Reviews
+                  </div>
+                  <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+                    What Our Patients Say
+                  </h2>
+                  <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
+                    Don't just take our word for it. Here's what our satisfied patients have to say about their experience with Jijau Pathology Laboratory.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {(showMoreReviews ? reviews : reviews.slice(0, 6)).map((review) => (
+                    <div key={review.id} className="bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 p-6">
+                      <div className="flex items-start space-x-4 mb-4">
+                        <div className="flex-shrink-0">
+                          <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                            {review.avatar}
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-lg font-semibold text-gray-900 truncate">{review.name}</h4>
+                          <p className="text-sm text-gray-500">{review.role}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center mb-3">
+                        <div className="flex space-x-1">
+                          {[...Array(5)].map((_, i) => (
+                            <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          ))}
+                        </div>
+                        <span className="ml-2 text-sm text-gray-500">{review.date}</span>
+                      </div>
+                      
+                      <p className="text-gray-700 leading-relaxed line-clamp-4">{review.review}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="text-center mt-12">
+                  <button 
+                    onClick={() => setShowMoreReviews(!showMoreReviews)}
+                    className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                  >
+                    <span>{showMoreReviews ? 'Show Less Reviews' : 'Show More Reviews'}</span>
+                    <svg className={`w-5 h-5 ml-2 transition-transform duration-300 ${showMoreReviews ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </section>
+
             {/* Process */}
             <section className="py-16 relative overflow-hidden" style={{
               background: 'linear-gradient(90deg, #f0e6ff 0%, #e6d9ff 100%)',
@@ -1365,11 +2002,11 @@ function Home() {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-8 relative" style={{ zIndex: 1 }}>
                     {/* Step 1 */}
-                    <div className="bg-white rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+                    <div className="relative bg-white rounded-xl p-5 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
                       <div className="relative mb-6">
-                        <div className="text-white w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold absolute -top-3 -left-3"
-                          style={{ backgroundColor: '#7F55B1', boxShadow: '0 0 0 5px #f0e6ff' }}>1</div>
-                        <div className="w-16 h-16 mx-auto">
+                        <div className="text-white w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold absolute -top-3 -left-3"
+                           style={{ backgroundColor: '#7F55B1', boxShadow: '0 0 0 5px #f0e6ff' }}>1</div>
+                        <div className="w-14 h-14 mx-auto">
                           <svg className="w-full h-full text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                           </svg>
@@ -1380,11 +2017,11 @@ function Home() {
                     </div>
 
                     {/* Step 2 */}
-                    <div className="bg-white rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+                    <div className="relative bg-white rounded-xl p-5 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
                       <div className="relative mb-6">
-                        <div className="text-white w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold absolute -top-3 -left-3"
-                          style={{ backgroundColor: '#7F55B1', boxShadow: '0 0 0 5px #f0e6ff' }}>2</div>
-                        <div className="w-16 h-16 mx-auto">
+                        <div className="text-white w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold absolute -top-3 -left-3"
+                           style={{ backgroundColor: '#7F55B1', boxShadow: '0 0 0 5px #f0e6ff' }}>2</div>
+                        <div className="w-14 h-14 mx-auto">
                           <svg className="w-full h-full text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -1396,11 +2033,11 @@ function Home() {
                     </div>
 
                     {/* Step 3 */}
-                    <div className="bg-white rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+                    <div className="relative bg-white rounded-xl p-5 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
                       <div className="relative mb-6">
-                        <div className="text-white w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold absolute -top-3 -left-3"
-                          style={{ backgroundColor: '#7F55B1', boxShadow: '0 0 0 5px #f0e6ff' }}>3</div>
-                        <div className="w-16 h-16 mx-auto">
+                        <div className="text-white w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold absolute -top-3 -left-3"
+                           style={{ backgroundColor: '#7F55B1', boxShadow: '0 0 0 5px #f0e6ff' }}>3</div>
+                        <div className="w-14 h-14 mx-auto">
                           <svg className="w-full h-full text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                           </svg>
@@ -1411,11 +2048,11 @@ function Home() {
                     </div>
 
                     {/* Step 4 */}
-                    <div className="bg-white rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+                    <div className="relative bg-white rounded-xl p-5 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
                       <div className="relative mb-6">
-                        <div className="text-white w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold absolute -top-3 -left-3"
-                          style={{ backgroundColor: '#7F55B1', boxShadow: '0 0 0 5px #f0e6ff' }}>4</div>
-                        <div className="w-16 h-16 mx-auto">
+                        <div className="text-white w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold absolute -top-3 -left-3"
+                           style={{ backgroundColor: '#7F55B1', boxShadow: '0 0 0 5px #f0e6ff' }}>4</div>
+                        <div className="w-14 h-14 mx-auto">
                           <svg className="w-full h-full text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
                           </svg>
@@ -1426,11 +2063,11 @@ function Home() {
                     </div>
 
                     {/* Step 5 */}
-                    <div className="bg-white rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+                    <div className="relative bg-white rounded-xl p-5 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
                       <div className="relative mb-6">
-                        <div className="text-white w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold absolute -top-3 -left-3"
-                          style={{ backgroundColor: '#7F55B1', boxShadow: '0 0 0 5px #f0e6ff' }}>5</div>
-                        <div className="w-16 h-16 mx-auto">
+                        <div className="text-white w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold absolute -top-3 -left-3"
+                           style={{ backgroundColor: '#7F55B1', boxShadow: '0 0 0 5px #f0e6ff' }}>5</div>
+                        <div className="w-14 h-14 mx-auto">
                           <svg className="w-full h-full text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
@@ -1468,16 +2105,41 @@ function Home() {
                     <h3 className="text-xl font-bold mb-4">JIJAU PATHOLOGY LABORATORY</h3>
                     <p className="text-secondary-300 mb-4">Your trusted partner for blood test and reliable Pathology services.</p>
                     <div className="flex space-x-4">
-                      <div className="p-2 rounded" style={{ backgroundColor: '#642EAA' }}>
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      {/* WhatsApp */}
+                      <a 
+                        href="https://wa.me/918605941731" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="group p-3 rounded-full bg-white/10 hover:bg-green-500 transition-all duration-300 transform hover:scale-110 hover:shadow-lg"
+                      >
+                        <svg className="w-6 h-6 text-white group-hover:text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
                         </svg>
-                      </div>
-                      <div className="p-2 rounded" style={{ backgroundColor: '#642EAA' }}>
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                      </a>
+                      
+                      {/* Facebook */}
+                      <a 
+                        href="https://www.facebook.com/share/16xLA3dfJe/" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="group p-3 rounded-full bg-white/10 hover:bg-blue-600 transition-all duration-300 transform hover:scale-110 hover:shadow-lg"
+                      >
+                        <svg className="w-6 h-6 text-white group-hover:text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                         </svg>
-                      </div>
+                      </a>
+                      
+                      {/* Instagram */}
+                      <a 
+                        href="https://www.instagram.com/jijau.pathologylab?igsh=MXZha3h4Y21ybnR1YQ==" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="group p-3 rounded-full bg-white/10 hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500 transition-all duration-300 transform hover:scale-110 hover:shadow-lg"
+                      >
+                        <svg className="w-6 h-6 text-white group-hover:text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                        </svg>
+                      </a>
                     </div>
                   </div>
 
@@ -1495,9 +2157,10 @@ function Home() {
                     <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
                     <ul className="space-y-2 text-secondary-300">
 
-                      <li><Link to="/login" className="hover:text-white">Login</Link></li>
+                      {/* Login link removed */}
                       <li><button onClick={() => scrollToSection(bookingRef)} className="text-secondary-300 hover:text-white">Book Appointment</button></li>
                       <li><button onClick={() => scrollToSection(packagesTopRef)} className="text-secondary-300 hover:text-white">Explore Packages</button></li>
+                      <li><button onClick={() => scrollToSection(allTestsRef)} className="text-secondary-300 hover:text-white">All Available Tests</button></li>
                     </ul>
                   </div>
 
@@ -1505,14 +2168,18 @@ function Home() {
                     <h4 className="text-lg font-semibold mb-4">Contact Info</h4>
                     <div className="space-y-4 text-secondary-300">
                       <div className="flex items-start gap-2">
-                        <span className="flex-shrink-0 mt-1">📞</span>
+                        <svg className="flex-shrink-0 mt-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
                         <p>
                           <a href="https://wa.me/918605941731" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">+91 8605941731</a>
                           <br />+91 2422299688
                         </p>
                       </div>
                       <div className="flex items-start gap-2">
-                        <span className="flex-shrink-0 mt-1">📧</span>
+                        <svg className="flex-shrink-0 mt-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
                         <p>
                           <a
                             href="mailto:smr.jijaupathologylab@gmail.com"
@@ -1523,7 +2190,10 @@ function Home() {
                         </p>
                       </div>
                       <div className="flex items-start gap-2">
-                        <span className="flex-shrink-0 mt-1">📍</span>
+                        <svg className="flex-shrink-0 mt-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
                         <a
                           href="https://maps.app.goo.gl/MJEnATgUghqZ5SqZ9"
                           target="_blank"

@@ -1,7 +1,6 @@
 import React from 'react'
 import Home from './pages/Home'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import Login from './pages/Login'
 
 
 export default function App(){
@@ -9,7 +8,7 @@ export default function App(){
     <BrowserRouter>
       <Routes>
         <Route path='/' element={<Home/>} />
-        <Route path='/login' element={<Login/>} />
+        {/* Login route removed */}
         
       </Routes>
     </BrowserRouter>

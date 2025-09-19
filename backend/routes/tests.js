@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
+// const auth = require('../middleware/auth');
 
 // Simple sample tests list (static sample)
 const SAMPLE = [
@@ -14,7 +14,7 @@ router.get('/', (req,res)=> {
 });
 
 // protected example: create a booking / request
-router.post('/book', auth, (req,res)=> {
+router.post('/book', /* auth, */ (req,res)=> {
   const {testId, patientName, contact} = req.body;
   if(!testId || !patientName) return res.status(400).json({msg:'Missing fields'});
   // In a real app you'd persist booking to DB.
