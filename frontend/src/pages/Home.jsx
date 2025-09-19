@@ -84,7 +84,7 @@ function Home() {
   useEffect(() => {
     const intervalId = setInterval(() => {
       setCurrentBg(prev => (prev + 1) % 4)
-    }, 6000)
+    }, 10000)
     return () => clearInterval(intervalId)
   }, [])
 
@@ -109,47 +109,15 @@ function Home() {
     setShowBookingModal(false)
   }
 
-  const handleBookingSubmit = async (e) => {
+  const handleBookingSubmit = (e) => {
     e.preventDefault()
     
+    // Use direct WhatsApp Web method instead of API
     try {
-      // Send WhatsApp notification to admin via API
-      const result = await whatsappService.sendBookingNotification(bookingForm)
-      
-      if (result.success) {
-        setToast({ show: true, type: 'success', message: 'Booking submitted. Admin notified via WhatsApp!' })
-        setFormBanner({ show: true, type: 'success', message: 'Thanks! Your booking was received. Our team will contact you shortly.' })
-        setTimeout(() => setFormBanner(prev => ({ ...prev, show: false })), 4000)
-        
-        // Reset form
-        setBookingForm({ 
-          name: '', 
-          phone: '', 
-          address: '', 
-          testType: '', 
-          customTestType: '' 
-        })
-      } else {
-        // Stay on page; show error
-        setToast({ show: true, type: 'error', message: 'Could not notify admin. Please try again shortly.' })
-        setFormBanner({ show: true, type: 'error', message: 'We could not notify our team right now. Please try again.' })
-        setTimeout(() => setFormBanner(prev => ({ ...prev, show: false })), 5000)
-        
-        // Reset form
-        setBookingForm({ 
-          name: '', 
-          phone: '', 
-          address: '', 
-          testType: '', 
-          customTestType: '' 
-        })
-      }
-    } catch (error) {
-      console.error('Error sending WhatsApp notification:', error)
-      // Stay on page; show error
-      setToast({ show: true, type: 'error', message: 'Could not notify admin. Please try again shortly.' })
-      setFormBanner({ show: true, type: 'error', message: 'We could not notify our team right now. Please try again.' })
-      setTimeout(() => setFormBanner(prev => ({ ...prev, show: false })), 5000)
+      whatsappService.sendViaWhatsAppWeb(bookingForm, 'booking')
+      setToast({ show: true, type: 'success', message: 'Opening WhatsApp to send your booking...' })
+      setFormBanner({ show: true, type: 'success', message: 'WhatsApp opened! Please send the message to complete your booking.' })
+      setTimeout(() => setFormBanner(prev => ({ ...prev, show: false })), 4000)
       
       // Reset form
       setBookingForm({ 
@@ -159,23 +127,68 @@ function Home() {
         testType: '', 
         customTestType: '' 
       })
+    } catch (error) {
+      console.error('Error opening WhatsApp:', error)
+      setToast({ show: true, type: 'error', message: 'Could not open WhatsApp. Please try again.' })
+      setFormBanner({ show: true, type: 'error', message: 'We could not open WhatsApp. Please try again.' })
+      setTimeout(() => setFormBanner(prev => ({ ...prev, show: false })), 5000)
     }
   }
 
-  const handleBookTest = async (test) => {
-    try {
-      // Send WhatsApp notification to admin via API
-      const result = await whatsappService.sendTestBookingNotification(test)
-      
-      if (result.success) {
-        setToast({ show: true, type: 'success', message: `Booked ${test.name}. Admin notified via WhatsApp!` })
-      } else {
-        setToast({ show: true, type: 'error', message: 'Could not notify admin. Please try again shortly.' })
-      }
-    } catch (error) {
-      console.error('Error sending WhatsApp notification:', error)
-      setToast({ show: true, type: 'error', message: 'Could not notify admin. Please try again shortly.' })
+  const handleDirectWhatsAppSend = (e) => {
+    e.preventDefault()
+    
+    // Validate form
+    if (!bookingForm.name || !bookingForm.phone || !bookingForm.testType) {
+      setToast({ show: true, type: 'error', message: 'Please fill in all required fields.' })
+      return
     }
+    
+    // Send directly via WhatsApp Web
+    whatsappService.sendViaWhatsAppWeb(bookingForm, 'booking')
+    
+    setToast({ show: true, type: 'success', message: 'Opening WhatsApp to send your booking...' })
+    setFormBanner({ show: true, type: 'success', message: 'WhatsApp opened! Please send the message to complete your booking.' })
+    setTimeout(() => setFormBanner(prev => ({ ...prev, show: false })), 5000)
+    
+    // Reset form
+    setBookingForm({ 
+      name: '', 
+      phone: '', 
+      address: '', 
+      testType: '', 
+      customTestType: '' 
+    })
+  }
+
+  const handleBookTest = (test) => {
+    // Use direct WhatsApp Web method instead of API
+    try {
+      whatsappService.sendViaWhatsAppWeb(test, 'test')
+      setToast({ show: true, type: 'success', message: `Opening WhatsApp to book ${test.name}...` })
+    } catch (error) {
+      console.error('Error opening WhatsApp:', error)
+      setToast({ show: true, type: 'error', message: 'Could not open WhatsApp. Please try again.' })
+    }
+  }
+
+  const handleDirectBookTestWhatsApp = (test) => {
+    // Send directly via WhatsApp Web
+    whatsappService.sendViaWhatsAppWeb(test, 'test')
+    
+    setToast({ show: true, type: 'success', message: `Opening WhatsApp to book ${test.name}...` })
+  }
+
+  const handlePackageBookWhatsApp = (packageName, packagePrice) => {
+    // Send package booking via WhatsApp Web
+    const packageData = {
+      name: packageName,
+      price: packagePrice,
+      type: 'package'
+    }
+    whatsappService.sendViaWhatsAppWeb(packageData, 'package')
+    
+    setToast({ show: true, type: 'success', message: `Opening WhatsApp to book ${packageName}...` })
   }
 
   // Filter and sort tests
@@ -575,15 +588,20 @@ function Home() {
 
                 <button
                   type="submit"
-                  className="w-full py-3 px-6 text-white rounded-lg font-bold text-base transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                  style={{ backgroundColor: '#642EAA' }}
+                  className="w-full py-3 px-6 bg-green-600 text-white rounded-lg font-bold text-base transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 hover:bg-green-700 flex items-center justify-center gap-2"
                   onMouseEnter={(e) => e.target.style.backgroundColor = '#4A1F7A'}
                   onMouseLeave={(e) => e.target.style.backgroundColor = '#642EAA'}
                 >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.471.099-.174.05-.347-.025-.471-.075-.124-.67-1.612-.916-2.206-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.011-1.04 2.475 0 1.464 1.065 2.875 1.215 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+                  </svg>
                   Book Test
                 </button>
                 <p className="text-xs text-gray-500 mt-2 text-center">
                   *All fields are mandatory. Terms and conditions apply.
+                </p>
+                <p className="text-xs text-gray-500 mt-1 text-center">
+                  Click "Send via WhatsApp" to send your booking details directly to our admin
                 </p>
               </form>
             </div>
@@ -1136,7 +1154,13 @@ function Home() {
                   </div>
                 </div>
 
-                <button className="w-full text-white py-3 rounded-lg font-semibold transition-colors" style={{ backgroundColor: '#642EAA' }} onMouseEnter={(e) => e.target.style.backgroundColor = '#4A1F7A'} onMouseLeave={(e) => e.target.style.backgroundColor = '#642EAA'}>
+                <button 
+                  className="w-full text-white py-3 rounded-lg font-semibold transition-colors" 
+                  style={{ backgroundColor: '#642EAA' }} 
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#4A1F7A'} 
+                  onMouseLeave={(e) => e.target.style.backgroundColor = '#642EAA'}
+                  onClick={() => handlePackageBookWhatsApp('JIJAU BASIC CARE', '₹1,499')}
+                >
                   Book Package
                 </button>
               </div>
@@ -1213,7 +1237,13 @@ function Home() {
                   </div>
                 </div>
 
-                <button className="w-full text-white py-3 rounded-lg font-semibold transition-colors" style={{ backgroundColor: '#642EAA' }} onMouseEnter={(e) => e.target.style.backgroundColor = '#4A1F7A'} onMouseLeave={(e) => e.target.style.backgroundColor = '#642EAA'}>
+                <button 
+                  className="w-full text-white py-3 rounded-lg font-semibold transition-colors" 
+                  style={{ backgroundColor: '#642EAA' }} 
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#4A1F7A'} 
+                  onMouseLeave={(e) => e.target.style.backgroundColor = '#642EAA'}
+                  onClick={() => handlePackageBookWhatsApp('JIJAU ACTIVE CARE +', '₹1,799')}
+                >
                   Book Package
                 </button>
               </div>
@@ -1287,7 +1317,13 @@ function Home() {
                   </div>
                 </div>
 
-                <button className="w-full text-white py-3 rounded-lg font-semibold transition-colors" style={{ backgroundColor: '#642EAA' }} onMouseEnter={(e) => e.target.style.backgroundColor = '#4A1F7A'} onMouseLeave={(e) => e.target.style.backgroundColor = '#642EAA'}>
+                <button 
+                  className="w-full text-white py-3 rounded-lg font-semibold transition-colors" 
+                  style={{ backgroundColor: '#642EAA' }} 
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#4A1F7A'} 
+                  onMouseLeave={(e) => e.target.style.backgroundColor = '#642EAA'}
+                  onClick={() => handlePackageBookWhatsApp('JIJAU WOMEN\'S CARE', '₹2,400')}
+                >
                   Book Package
                 </button>
               </div>
@@ -1318,7 +1354,13 @@ function Home() {
                       <div className="flex items-center text-sm text-gray-700"><span className="mr-2" style={{ color: '#642EAA' }}>→</span>TOTAL CHOLESTEROL - SERUM</div>
                       <div className="flex items-center text-sm text-gray-700"><span className="mr-2" style={{ color: '#642EAA' }}>→</span>URINE ROUTINE</div>
                     </div>
-                    <button className="w-full text-white py-3 rounded-lg font-semibold transition-colors" style={{ backgroundColor: '#642EAA' }} onMouseEnter={(e) => e.target.style.backgroundColor = '#4A1F7A'} onMouseLeave={(e) => e.target.style.backgroundColor = '#642EAA'}>
+                    <button 
+                      className="w-full text-white py-3 rounded-lg font-semibold transition-colors" 
+                      style={{ backgroundColor: '#642EAA' }} 
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#4A1F7A'} 
+                      onMouseLeave={(e) => e.target.style.backgroundColor = '#642EAA'}
+                      onClick={() => handlePackageBookWhatsApp('JIJAU DIABETIC CARE', '₹599')}
+                    >
                       Book Package
                     </button>
                   </div>
@@ -1347,7 +1389,13 @@ function Home() {
                       <div className="flex items-center text-sm text-gray-700"><span className="mr-2" style={{ color: '#642EAA' }}>→</span>DENGUE (NS1, IgG, IgM) RAPID</div>
                       <div className="flex items-center text-sm text-gray-700"><span className="mr-2" style={{ color: '#642EAA' }}>→</span>URINE ROUTINE</div>
                     </div>
-                    <button className="w-full text-white py-3 rounded-lg font-semibold transition-colors" style={{ backgroundColor: '#642EAA' }} onMouseEnter={(e) => e.target.style.backgroundColor = '#4A1F7A'} onMouseLeave={(e) => e.target.style.backgroundColor = '#642EAA'}>
+                    <button 
+                      className="w-full text-white py-3 rounded-lg font-semibold transition-colors" 
+                      style={{ backgroundColor: '#642EAA' }} 
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#4A1F7A'} 
+                      onMouseLeave={(e) => e.target.style.backgroundColor = '#642EAA'}
+                      onClick={() => handlePackageBookWhatsApp('JIJAU FEVER CARE', '₹999')}
+                    >
                       Book Package
                     </button>
                   </div>
@@ -1380,7 +1428,13 @@ function Home() {
                       <div className="flex items-center text-sm text-gray-700"><span className="mr-2" style={{ color: '#642EAA' }}>→</span>ESR</div>
                       <div className="flex items-center text-sm text-gray-700"><span className="mr-2" style={{ color: '#642EAA' }}>→</span>PSA (PROSTATE SPECIFIC ANTIGEN)</div>
                     </div>
-                    <button className="w-full text-white py-3 rounded-lg font-semibold transition-colors" style={{ backgroundColor: '#642EAA' }} onMouseEnter={(e) => e.target.style.backgroundColor = '#4A1F7A'} onMouseLeave={(e) => e.target.style.backgroundColor = '#642EAA'}>
+                    <button 
+                      className="w-full text-white py-3 rounded-lg font-semibold transition-colors" 
+                      style={{ backgroundColor: '#642EAA' }} 
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#4A1F7A'} 
+                      onMouseLeave={(e) => e.target.style.backgroundColor = '#642EAA'}
+                      onClick={() => handlePackageBookWhatsApp('SENIOR CITIZEN CARE', '₹2,999')}
+                    >
                       Book Package
                     </button>
                   </div>
@@ -1678,13 +1732,16 @@ function Home() {
 
                       <div className="flex gap-2">
                         <button 
-                          onClick={() => handleBookTest(test)}
-                          className="flex-1 bg-primary-600 hover:bg-primary-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors"
+                          onClick={() => handleDirectBookTestWhatsApp(test)}
+                          className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1"
+                          style={{ backgroundColor: '#642EAA' }}
+                          onMouseEnter={(e) => e.target.style.backgroundColor = '#4A1F7A'}
+                          onMouseLeave={(e) => e.target.style.backgroundColor = '#642EAA'}
                         >
-                          Book Now
-                        </button>
-                        <button className="flex-1 border border-primary-600 text-primary-600 hover:bg-primary-600 hover:text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors">
-                          View Details
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.471.099-.174.05-.347-.025-.471-.075-.124-.67-1.612-.916-2.206-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.011-1.04 2.475 0 1.464 1.065 2.875 1.215 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.645 5.11"/>
+                          </svg>
+                          Book Test
                         </button>
                       </div>
                     </div>

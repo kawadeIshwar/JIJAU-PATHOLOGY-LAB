@@ -49,7 +49,7 @@ export default function ImageCarousel() {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length)
-      }, 3000) // Change slide every 3 seconds
+      }, 10000) // Change slide every 10 seconds
 
     return () => clearInterval(timer)
   }, [slides.length])

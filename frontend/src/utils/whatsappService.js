@@ -95,6 +95,24 @@ export class WhatsAppService {
       })}
 
 Please contact the patient as soon as possible.`;
+    } else if (type === 'package') {
+      message = `🏥 *New Package Booking Request*
+
+📦 *Package Details:*
+• Package Name: ${formData.name}
+• Price: ${formData.price}
+• Type: Health Package
+
+📅 *Booking Time:* ${new Date().toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })}
+
+Please contact the patient for package booking details.`;
     } else {
       message = `🏥 *New Test Booking Request*
 
