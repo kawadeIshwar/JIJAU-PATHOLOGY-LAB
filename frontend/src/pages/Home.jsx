@@ -738,7 +738,7 @@ function Home() {
   {/* Hero Content Overlay */}
   <div className="relative z-10 h-full flex items-center">
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center justify-items-center md:justify-items-start h-full -mt-6 md:-mt-4 lg:mt-0">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center justify-items-center md:justify-items-start h-full -mt-0 md:-mt-4 lg:mt-0">
         {/* Left: Slide content blocks */}
         <div className="relative">
           {/* Slide 1: Accurate Diagnostics */}
@@ -847,10 +847,10 @@ function Home() {
             <h2 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-purple-900 leading-tight mb-3">
               Home Sample Collection
             </h2>
-            <h3 className="text-2xl sm:text-3xl md:text-4xl tracking-wide text-gray-800 mb-4">
+            {/* <h3 className="text-xl sm:text-xl md:text-2xl tracking-wide text-gray-800 mb-4">
               Convenient, Safe & Fast Sample Collection at Your Doorstep
-            </h3>
-            <p className="text-lg sm:text-xl md:text-2xl text-purple-700 max-w-2xl mb-8">
+            </h3> */}
+            <p className="text-lg sm:text-xl md:text-2xl text-black max-w-2xl mb-8">
               Enjoy doorstep sample pickup by certified phlebotomists.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 mb-10">
@@ -876,7 +876,7 @@ function Home() {
 
         {/* Right: Slide images, crossfading */}
         <div className="relative w-full h-64 sm:h-80 md:h-[420px] lg:h-[520px] flex items-center justify-center">
-          {[img1, img2, img3, img4].map((image, index) => (
+          {[img2, img4, img3, img1].map((image, index) => (
             <div key={index} className={`absolute inset-0 flex items-center justify-center transition-opacity duration-700 ${currentBg === index ? 'opacity-100' : 'opacity-0'}`}>
               <img src={image} alt={`Slide ${index + 1}`} className="max-h-full max-w-full object-contain" />
             </div>
