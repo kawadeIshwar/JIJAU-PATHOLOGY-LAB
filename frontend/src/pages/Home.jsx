@@ -954,7 +954,7 @@ function Home() {
       )}
     </header>
       {/* Hero Section - Fullscreen Sliding Background */}
-      <section className="relative w-screen min-h-[50vh] sm:min-h-[60vh] md:min-h-[70vh] lg:min-h-screen overflow-hidden pt-4 md:pt-6 lg:pt-8">
+      <section className="relative w-screen min-h-[40vh] sm:min-h-[50vh] md:min-h-[60vh] lg:min-h-[70vh] xl:min-h-screen overflow-hidden pt-4 md:pt-6 lg:pt-8">
   {/* Background slides (white), 4 slides crossfade */}
   {[0, 1, 2, 3].map((index) => (
     <div key={index} className={`absolute inset-0 transition-opacity duration-1000 ${currentBg === index ? 'opacity-100' : 'opacity-0'}`}>
@@ -965,7 +965,7 @@ function Home() {
   {/* Hero Content Overlay */}
   <div className="relative z-10 flex items-center">
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center justify-items-center md:justify-items-start py-8 md:py-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-center justify-items-center md:justify-items-start py-6 md:py-8">
         {/* Left: Slide content blocks */}
         <div className="relative scroll-fade-in scroll-slide-left">
           {/* Slide 1: Accurate Diagnostics */}
@@ -1102,7 +1102,7 @@ function Home() {
         </div>
 
         {/* Right: Slide images, crossfading */}
-        <div className="relative w-full h-48 sm:h-64 md:h-[380px] lg:h-[480px] flex items-center justify-center scroll-fade-in scroll-slide-right">
+        <div className="relative w-full h-40 sm:h-56 md:h-[320px] lg:h-[400px] flex items-center justify-center scroll-fade-in scroll-slide-right">
           {[img2, img4, img3, img1].map((image, index) => (
             <div key={index} className={`absolute inset-0 flex items-center justify-center transition-opacity duration-700 ${currentBg === index ? 'opacity-100' : 'opacity-0'}`}>
               <img src={image} alt={`Slide ${index + 1}`} className="max-h-full max-w-full object-contain" />
@@ -1116,9 +1116,9 @@ function Home() {
 
 
       {/* Booking Form */}
-      <section ref={bookingRef} id="booking" className="pt-2 pb-8 md:py-20 bg-gradient-to-br from-purple-50 via-white to-purple-100">
+      <section ref={bookingRef} id="booking" className="pt-1 pb-4 md:py-16 bg-gradient-to-br from-purple-50 via-white to-purple-100">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16 scroll-fade-in scroll-scale-up">
+          <div className="text-center mb-12 scroll-fade-in scroll-scale-up">
             <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold mb-4 scroll-float" style={{ backgroundColor: '#E8D5F2', color: '#642EAA' }}>
               <span className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: '#642EAA' }}></span>
               Quick & Easy Booking
