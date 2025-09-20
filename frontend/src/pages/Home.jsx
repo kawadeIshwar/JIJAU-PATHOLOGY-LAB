@@ -954,7 +954,7 @@ function Home() {
       )}
     </header>
       {/* Hero Section - Fullscreen Sliding Background */}
-      <section className="relative w-screen min-h-[50vh] sm:min-h-[60vh] md:min-h-[70vh] lg:min-h-screen overflow-hidden pt-8 md:pt-10 lg:pt-14">
+      <section className="relative w-screen min-h-[50vh] sm:min-h-[60vh] md:min-h-[70vh] lg:min-h-screen overflow-hidden pt-4 md:pt-6 lg:pt-8">
   {/* Background slides (white), 4 slides crossfade */}
   {[0, 1, 2, 3].map((index) => (
     <div key={index} className={`absolute inset-0 transition-opacity duration-1000 ${currentBg === index ? 'opacity-100' : 'opacity-0'}`}>
