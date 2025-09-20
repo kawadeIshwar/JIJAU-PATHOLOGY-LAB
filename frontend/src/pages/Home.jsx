@@ -954,7 +954,7 @@ function Home() {
       )}
     </header>
       {/* Hero Section - Fullscreen Sliding Background */}
-      <section className="relative w-screen min-h-[70vh] sm:min-h-[80vh] md:min-h-[90vh] lg:min-h-screen overflow-hidden pt-8 md:pt-10 lg:pt-14">
+      <section className="relative w-screen min-h-[50vh] sm:min-h-[60vh] md:min-h-[70vh] lg:min-h-screen overflow-hidden pt-8 md:pt-10 lg:pt-14">
   {/* Background slides (white), 4 slides crossfade */}
   {[0, 1, 2, 3].map((index) => (
     <div key={index} className={`absolute inset-0 transition-opacity duration-1000 ${currentBg === index ? 'opacity-100' : 'opacity-0'}`}>
@@ -963,9 +963,9 @@ function Home() {
   ))}
 
   {/* Hero Content Overlay */}
-  <div className="relative z-10 h-full flex items-center">
-    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center justify-items-center md:justify-items-start h-full -mt-0 md:-mt-4 lg:mt-0">
+  <div className="relative z-10 flex items-center">
+    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center justify-items-center md:justify-items-start py-8 md:py-12">
         {/* Left: Slide content blocks */}
         <div className="relative scroll-fade-in scroll-slide-left">
           {/* Slide 1: Accurate Diagnostics */}
@@ -1102,7 +1102,7 @@ function Home() {
         </div>
 
         {/* Right: Slide images, crossfading */}
-        <div className="relative w-full h-64 sm:h-80 md:h-[420px] lg:h-[520px] flex items-center justify-center scroll-fade-in scroll-slide-right">
+        <div className="relative w-full h-48 sm:h-64 md:h-[380px] lg:h-[480px] flex items-center justify-center scroll-fade-in scroll-slide-right">
           {[img2, img4, img3, img1].map((image, index) => (
             <div key={index} className={`absolute inset-0 flex items-center justify-center transition-opacity duration-700 ${currentBg === index ? 'opacity-100' : 'opacity-0'}`}>
               <img src={image} alt={`Slide ${index + 1}`} className="max-h-full max-w-full object-contain" />
@@ -1116,7 +1116,7 @@ function Home() {
 
 
       {/* Booking Form */}
-      <section ref={bookingRef} id="booking" className="pt-4 pb-12 md:py-20 bg-gradient-to-br from-purple-50 via-white to-purple-100">
+      <section ref={bookingRef} id="booking" className="pt-2 pb-8 md:py-20 bg-gradient-to-br from-purple-50 via-white to-purple-100">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16 scroll-fade-in scroll-scale-up">
             <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold mb-4 scroll-float" style={{ backgroundColor: '#E8D5F2', color: '#642EAA' }}>
