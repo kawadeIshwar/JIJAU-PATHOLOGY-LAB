@@ -954,7 +954,7 @@ function Home() {
       )}
     </header>
       {/* Hero Section - Fullscreen Sliding Background */}
-      <section className="relative w-screen min-h-[40vh] sm:min-h-[50vh] md:min-h-[60vh] lg:min-h-[70vh] xl:min-h-screen overflow-hidden pt-4 md:pt-6 lg:pt-8">
+      <section className="relative w-screen min-h-[40vh] sm:min-h-[50vh] md:min-h-[60vh] lg:min-h-[70vh] xl:min-h-screen 2xl:min-h-screen overflow-hidden md:pt-6 lg:pt-8">
   {/* Background slides (white), 4 slides crossfade */}
   {[0, 1, 2, 3].map((index) => (
     <div key={index} className={`absolute inset-0 transition-opacity duration-1000 ${currentBg === index ? 'opacity-100' : 'opacity-0'}`}>
@@ -963,11 +963,11 @@ function Home() {
   ))}
 
   {/* Hero Content Overlay */}
-  <div className="relative z-10 flex items-center">
-    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-center justify-items-center md:justify-items-start py-6 md:py-8">
+  <div className="relative z-10 flex items-center min-h-[calc(100vh-120px)]">
+    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 2xl:max-w-7xl">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-center justify-items-center md:justify-items-start py-6 ">
         {/* Left: Slide content blocks */}
-        <div className="relative scroll-fade-in scroll-slide-left">
+        <div className="relative scroll-fade-in scroll-slide-left w-full">
           {/* Slide 1: Accurate Diagnostics */}
           <div className={`max-w-3xl transition-opacity duration-700 text-center md:text-left mx-auto md:mx-0 ${currentBg === 0 ? 'opacity-100' : 'opacity-0 pointer-events-none absolute'}`}>
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold text-purple-900 mb-2 sm:mb-3 leading-tight">
@@ -1102,10 +1102,10 @@ function Home() {
         </div>
 
         {/* Right: Slide images, crossfading */}
-        <div className="relative w-full h-40 sm:h-56 md:h-[320px] lg:h-[400px] flex items-center justify-center scroll-fade-in scroll-slide-right">
+        <div className="relative w-full h-40 sm:h-56 md:h-[320px] lg:h-[400px] xl:h-[500px] 2xl:h-[600px] flex items-center justify-center scroll-fade-in scroll-slide-right">
           {[img2, img4, img3, img1].map((image, index) => (
             <div key={index} className={`absolute inset-0 flex items-center justify-center transition-opacity duration-700 ${currentBg === index ? 'opacity-100' : 'opacity-0'}`}>
-              <img src={image} alt={`Slide ${index + 1}`} className="max-h-full max-w-full object-contain" />
+              <img src={image} alt={`Slide ${index + 1}`} className="max-h-full max-w-full object-contain xl:max-w-2xl 2xl:max-w-3xl" />
             </div>
           ))}
         </div>
@@ -1114,11 +1114,10 @@ function Home() {
   </div>
 </section>
 
-
       {/* Booking Form */}
-      <section ref={bookingRef} id="booking" className="pt-1 pb-4 md:py-16 bg-gradient-to-br from-purple-50 via-white to-purple-100">
+      <section ref={bookingRef} id="booking" className="pt-0 pb-0 md:py-0 bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12 scroll-fade-in scroll-scale-up">
+          <div className="text-center mb-8 scroll-fade-in scroll-scale-up">
             <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold mb-4 scroll-float" style={{ backgroundColor: '#E8D5F2', color: '#642EAA' }}>
               <span className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: '#642EAA' }}></span>
               Quick & Easy Booking
@@ -1131,10 +1130,10 @@ function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             {/* Left Side - Benefits */}
-            <div className="space-y-8">
-              <div className="space-y-6">
+            <div className="space-y-6">
+              <div className="space-y-4">
                 <h3 className="text-2xl font-bold text-gray-900">Why Choose Us?</h3>
                 <div className="space-y-4">
                   <div className="flex items-start space-x-4">
@@ -1181,7 +1180,7 @@ function Home() {
             </div>
 
             {/* Right Side - Form */}
-            <div className="bg-purple-200 rounded-3xl p-8 shadow-2xl border border-purple-100">
+            <div className="bg-purple-200 rounded-2xl p-6 shadow-lg border border-purple-100">
               {formBanner.show && (
                 <div className={`mb-4 px-4 py-3 rounded-lg ${formBanner.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
                   <div className="flex items-start justify-between gap-4">
@@ -1190,7 +1189,7 @@ function Home() {
                   </div>
                 </div>
               )}
-              <div className="mb-6">
+              <div className="mb-4">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Book Your Test</h3>
                 <p className="text-gray-600">Fill the form and we'll call you within 15 minutes</p>
               </div>
