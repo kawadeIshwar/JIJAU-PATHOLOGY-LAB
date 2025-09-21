@@ -953,8 +953,8 @@ function Home() {
         </div>
       )}
     </header>
-      {/* Hero Section - Fullscreen Sliding Background */}
-      <section className="relative w-screen min-h-[40vh] sm:min-h-[50vh] md:min-h-[60vh] lg:min-h-[70vh] xl:min-h-screen 2xl:min-h-screen overflow-hidden md:pt-6 lg:pt-8">
+      {/* Hero Section - Normal height for all screens */}
+      <section className="relative w-screen h-screen flex items-center overflow-hidden justify-center">
   {/* Background slides (white), 4 slides crossfade */}
   {[0, 1, 2, 3].map((index) => (
     <div key={index} className={`absolute inset-0 transition-opacity duration-1000 ${currentBg === index ? 'opacity-100' : 'opacity-0'}`}>
@@ -963,9 +963,9 @@ function Home() {
   ))}
 
   {/* Hero Content Overlay */}
-  <div className="relative z-10 flex items-center min-h-[calc(100vh-120px)]">
+  <div className="relative z-10 flex items-center min-h-[75vh]">
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 2xl:max-w-7xl">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-center justify-items-center md:justify-items-start py-6 ">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-center justify-items-center md:justify-items-start py-6 md:py-8 lg:py-6 xl:py-6">
         {/* Left: Slide content blocks */}
         <div className="relative scroll-fade-in scroll-slide-left w-full">
           {/* Slide 1: Accurate Diagnostics */}
@@ -1074,9 +1074,6 @@ function Home() {
             <h2 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-purple-900 leading-tight mb-3">
               Home Sample Collection
             </h2>
-            {/* <h3 className="text-xl sm:text-xl md:text-2xl tracking-wide text-gray-800 mb-4">
-              Convenient, Safe & Fast Sample Collection at Your Doorstep
-            </h3> */}
             <p className="text-lg sm:text-xl md:text-2xl text-black max-w-2xl mb-8">
               Enjoy doorstep sample pickup by certified phlebotomists.
             </p>
@@ -1102,7 +1099,7 @@ function Home() {
         </div>
 
         {/* Right: Slide images, crossfading */}
-        <div className="relative w-full h-40 sm:h-56 md:h-[320px] lg:h-[400px] xl:h-[500px] 2xl:h-[600px] flex items-center justify-center scroll-fade-in scroll-slide-right">
+        <div className="relative w-full h-40 sm:h-56 md:h-[320px] lg:h-[400px] xl:h-[500px] 2xl:h-[600px] flex items-center justify-center scroll-fade-in scroll-slide-right mb-2 md:mb-0">
           {[img2, img4, img3, img1].map((image, index) => (
             <div key={index} className={`absolute inset-0 flex items-center justify-center transition-opacity duration-700 ${currentBg === index ? 'opacity-100' : 'opacity-0'}`}>
               <img src={image} alt={`Slide ${index + 1}`} className="max-h-full max-w-full object-contain xl:max-w-2xl 2xl:max-w-3xl" />
@@ -1115,7 +1112,7 @@ function Home() {
 </section>
 
       {/* Booking Form */}
-      <section ref={bookingRef} id="booking" className="pt-0 pb-0 md:py-0 bg-white">
+      <section ref={bookingRef} id="booking" className="py-12 md:py-16 lg:py-20 bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8 scroll-fade-in scroll-scale-up">
             <div className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold mb-4 scroll-float" style={{ backgroundColor: '#E8D5F2', color: '#642EAA' }}>
