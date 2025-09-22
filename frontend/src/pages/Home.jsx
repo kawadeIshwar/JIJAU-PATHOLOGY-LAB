@@ -954,7 +954,7 @@ function Home() {
         )}
       </header>
       
-            <section className="relative w-screen min-h-screen flex items-center overflow-hidden">
+        <section className="relative w-screen flex items-center overflow-hidden">
         {/* Background slides (white), 4 slides crossfade */}
         {[0, 1, 2, 3].map((index) => (
           <div
