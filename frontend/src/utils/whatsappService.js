@@ -6,7 +6,7 @@ export class WhatsAppService {
   }
 
   // Send booking form data via WhatsApp API
-  async sendBookingNotification(formData) {
+  async  sendBookingNotification(formData) {
     try {
       const response = await fetch(`${this.apiBaseUrl}/api/booking`, {
         method: 'POST',

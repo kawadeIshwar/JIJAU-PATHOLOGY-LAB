@@ -858,7 +858,7 @@ function Home() {
                   +91 8605941731
                 </a>
                 <a
-                  href="tel:+91 02422299688"
+                  href="tel:+91 2422299688"
                   className="text-white hover:text-purple-200 px-4 py-2 text-sm font-semibold transition-all duration-300 hover:bg-white/20 rounded-lg inline-flex items-center gap-2"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -935,7 +935,7 @@ function Home() {
               WhatsApp
             </a>
             <a
-              href="tel:+91 02422299688"
+              href="tel:+91 2422299688"
               className="block text-white hover:text-purple-200 px-3 py-2 rounded-lg font-semibold"
               onClick={() => setMenuOpen(false)}
             >
