@@ -316,13 +316,6 @@ function Home() {
   const handlePathologyBookingSubmit = (e) => {
     e.preventDefault()
 
-    // Validate form
-    const validationErrors = validateFormFields(bookingForm)
-    if (validationErrors.length > 0) {
-      setToast({ show: true, type: 'error', message: validationErrors[0] })
-      return
-    }
-
     // Create booking data with pre-selected pathology category and test
     const pathologyBookingData = {
       name: bookingForm.name,
@@ -332,6 +325,13 @@ function Home() {
       customTestType: selectedPathologyTest, // Use the specific test name
       testPrice: selectedPathologyPrice,
       category: 'pathology'
+    }
+
+    // Validate the pathology booking data (not the general booking form)
+    const validationErrors = validateFormFields(pathologyBookingData)
+    if (validationErrors.length > 0) {
+      setToast({ show: true, type: 'error', message: validationErrors[0] })
+      return
     }
 
     // Send via WhatsApp Web
@@ -789,7 +789,7 @@ function Home() {
               <button onClick={() => setShowPathologyBookingModal(false)} className="absolute right-3 top-3 text-gray-500 hover:text-gray-700" aria-label="Close">
                 ✕
               </button>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Book {selectedPathologyCategory} Test</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Book {selectedPathologyCategory === 'Package' ? 'Package' : selectedPathologyCategory + ' Test'}</h3>
               <p className="text-gray-600 mb-2">{selectedPathologyTest} - {selectedPathologyPrice}</p>
               <p className="text-gray-600 mb-6">Fill the form and we'll call you within 15 minutes</p>
               <form onSubmit={handlePathologyBookingSubmit} className="space-y-4">
@@ -1408,7 +1408,7 @@ function Home() {
                   onMouseEnter={(e) => e.target.style.backgroundColor = '#4A1F7A'}
                   onMouseLeave={(e) => e.target.style.backgroundColor = '#642EAA'}
                 >
-                  Book Test
+                  {selectedPathologyCategory === 'Package' ? 'Book Package' : 'Book Test'}
                 </button>
                 <p className="text-xs text-gray-500 mt-2 text-center">
                   *All fields are mandatory. Terms and conditions apply.
@@ -2125,7 +2125,7 @@ function Home() {
                 <button onClick={handleCallUs} className="bg-white text-logo-vibrant hover:bg-purple-50 px-8 py-3 rounded-lg font-semibold transition-colors">
                   Call Us: +91 2422299688
                 </button>
-                <button onClick={handleRequestCallBack} className="border-2 border-white text-white hover:bg-white hover:text-logo-vibrant px-8 py-3 rounded-lg font-semibold transition-colors">
+                <button onClick={handleRequestCallBack} className="border-2 border-white bg-white text-logo-vibrant px-8 py-3 rounded-lg font-semibold transition-colors">
                   Request Call Back
                 </button>
                 <button onClick={handleWhatsAppChat} className="bg-white text-logo-vibrant hover:bg-purple-50 px-8 py-3 rounded-lg font-semibold transition-colors">
