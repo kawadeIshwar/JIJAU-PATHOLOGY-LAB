@@ -150,12 +150,28 @@ function Home() {
   }, [toast.show])
 
   const handleBookingSubmitModal = (e) => {
+    e.preventDefault()
+
+    // Validate form
+    const validationErrors = validateFormFields(bookingForm)
+    if (validationErrors.length > 0) {
+      setToast({ show: true, type: 'error', message: validationErrors[0] })
+      return
+    }
+
     handleBookingSubmit(e)
     setShowBookingModal(false)
   }
 
   const handleBookingSubmit = (e) => {
     e.preventDefault()
+
+    // Validate form
+    const validationErrors = validateFormFields(bookingForm)
+    if (validationErrors.length > 0) {
+      setToast({ show: true, type: 'error', message: validationErrors[0] })
+      return
+    }
 
     // Use direct WhatsApp Web method instead of API
     try {
@@ -180,12 +196,45 @@ function Home() {
     }
   }
 
+  // Validation function to check for spaces-only input
+  const validateFormFields = (formData) => {
+    const errors = []
+    
+    // Check name field
+    if (!formData.name || !formData.name.trim()) {
+      errors.push('Name cannot be empty or contain only spaces')
+    }
+    
+    // Check phone field
+    if (!formData.phone || !formData.phone.trim()) {
+      errors.push('Phone number cannot be empty or contain only spaces')
+    }
+    
+    // Check address field
+    if (!formData.address || !formData.address.trim()) {
+      errors.push('Address cannot be empty or contain only spaces')
+    }
+    
+    // Check test type field
+    if (!formData.testType || !formData.testType.trim()) {
+      errors.push('Test type cannot be empty or contain only spaces')
+    }
+    
+    // Check custom test type if test type is 'other'
+    if (formData.testType === 'other' && (!formData.customTestType || !formData.customTestType.trim())) {
+      errors.push('Custom test type cannot be empty or contain only spaces')
+    }
+    
+    return errors
+  }
+
   const handleDirectWhatsAppSend = (e) => {
     e.preventDefault()
 
     // Validate form
-    if (!bookingForm.name || !bookingForm.phone || !bookingForm.testType) {
-      setToast({ show: true, type: 'error', message: 'Please fill in all required fields.' })
+    const validationErrors = validateFormFields(bookingForm)
+    if (validationErrors.length > 0) {
+      setToast({ show: true, type: 'error', message: validationErrors[0] })
       return
     }
 
@@ -266,6 +315,13 @@ function Home() {
 
   const handlePathologyBookingSubmit = (e) => {
     e.preventDefault()
+
+    // Validate form
+    const validationErrors = validateFormFields(bookingForm)
+    if (validationErrors.length > 0) {
+      setToast({ show: true, type: 'error', message: validationErrors[0] })
+      return
+    }
 
     // Create booking data with pre-selected pathology category and test
     const pathologyBookingData = {
@@ -858,7 +914,7 @@ function Home() {
                   +91 8605941731
                 </a>
                 <a
-                  href="tel:+91 2422299688"
+                  href="tel:+912422299688"
                   className="text-white hover:text-purple-200 px-4 py-2 text-sm font-semibold transition-all duration-300 hover:bg-white/20 rounded-lg inline-flex items-center gap-2"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -935,7 +991,7 @@ function Home() {
               WhatsApp
             </a>
             <a
-              href="tel:+91 2422299688"
+              href="tel:+912422299688"
               className="block text-white hover:text-purple-200 px-3 py-2 rounded-lg font-semibold"
               onClick={() => setMenuOpen(false)}
             >
