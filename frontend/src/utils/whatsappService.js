@@ -121,29 +121,6 @@ Please contact the patient as soon as possible.`;
       })}
 
 Please contact the patient for package booking details.`;
-    } else if (type === 'pathology_booking') {
-      message = `🏥 *New Pathology Booking Request*
-
-👤 *Patient Details:*
-• Name: ${formData.name}
-• Phone: ${formData.phone}
-• Address: ${formData.address}
-
-🧪 *Test Details:*
-• Category: ${formData.testType}
-• Test Name: ${formData.customTestType}
-• Price: ${formData.testPrice}
-
-📅 *Booking Time:* ${new Date().toLocaleString('en-IN', {
-        timeZone: 'Asia/Kolkata',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      })}
-
-Please contact the patient for pathology booking details.`;
     } else {
       message = `🏥 *New Test Booking Request*
 
