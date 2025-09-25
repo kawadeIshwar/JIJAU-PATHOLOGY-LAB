@@ -768,7 +768,7 @@ function Home() {
                   *All fields are mandatory. Terms and conditions apply.
                 </p>
                 <p className="text-xs text-gray-500 mt-1 text-center">
-                  Click "Send via WhatsApp" to send your booking details directly to our admin
+                  Click "Book Test" to send your booking details directly to our admin
                 </p>
               </form>
             </div>
@@ -1036,15 +1036,14 @@ function Home() {
                       : "opacity-0 pointer-events-none absolute"
                     }`}
                 >
-                  <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold text-purple-900 mb-2 sm:mb-3 leading-tight">
-                    Accurate Diagnostics
+                  <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl font-extrabold text-purple-900 mb-2 sm:mb-3 leading-tight">
+                    Best Pathology Lab in Shrirampur
                   </h1>
                   <h3 className="text-xl sm:text-2xl md:text-3xl text-gray-700 md:text-gray-800 mb-3">
-                    Trusted Lab Results You Can Rely On
+                    Top Diagnostic Center in Ahmednagar, Maharashtra
                   </h3>
                   <p className="text-base sm:text-lg md:text-xl text-purple-700 max-w-2xl mb-6 md:mb-8">
-                    State-of-the-art equipment and certified technicians ensure
-                    accurate results
+                    Reliable medical laboratory in Maharashtra with state-of-the-art equipment and certified technicians ensuring 99.8% accurate results
                   </p>
                   <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-8">
                     <button
@@ -1270,15 +1269,15 @@ function Home() {
             {/* Left Side - Benefits */}
             <div className="space-y-6">
               <div className="space-y-4">
-                <h3 className="text-2xl font-bold text-gray-900">Why Choose Us?</h3>
+                <h3 className="text-2xl font-bold text-gray-900">Why Choose JIJAU - Best Pathology Lab in Shrirampur?</h3>
                 <div className="space-y-4">
                   <div className="flex items-start space-x-4">
                     <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full flex items-center justify-center">
                       <span className="text-white text-sm font-bold">✓</span>
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900">Home Sample Collection</h4>
-                      <p className="text-gray-600">Professional phlebotomists visit your home</p>
+                      <h4 className="font-semibold text-gray-900">Home Sample Collection in Shrirampur & Ahmednagar</h4>
+                      <p className="text-gray-600">Professional phlebotomists visit your home across Shrirampur, Ahmednagar, and surrounding areas</p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-4">
@@ -1286,8 +1285,8 @@ function Home() {
                       <span className="text-white text-sm font-bold">✓</span>
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900">Fast Results</h4>
-                      <p className="text-gray-600">Get reports within 6 hours online</p>
+                      <h4 className="font-semibold text-gray-900">Fast Results - Reports in 3-6 Hours</h4>
+                      <p className="text-gray-600">Get your pathology reports online within 6 hours - fastest in Maharashtra</p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-4">
@@ -1295,8 +1294,8 @@ function Home() {
                       <span className="text-white text-sm font-bold">✓</span>
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900">Fully Automated Lab</h4>
-                      <p className="text-gray-600">High Quality controls and calibration(biorad & randox)</p>
+                      <h4 className="font-semibold text-gray-900"> Fully Automated Lab</h4>
+                      <p className="text-gray-600">Reliable medical laboratory with high-quality controls and calibration (biorad & randox)</p>
                     </div>
                   </div>
                 </div>
@@ -1432,8 +1431,8 @@ function Home() {
               Complete Health Solutions
             </h2>
             <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-              Choose from our carefully designed health packages that offer complete diagnostic solutions at affordable prices.
-              All packages include home sample collection and fast report delivery.
+              Choose from our carefully designed health checkup packages that offer complete diagnostic solutions at affordable prices in Shrirampur and Ahmednagar. 
+              All packages include home sample collection and fast report delivery from Maharashtra's top diagnostic center.
             </p>
           </div>
 
