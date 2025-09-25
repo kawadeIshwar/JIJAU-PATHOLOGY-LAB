@@ -665,6 +665,7 @@ function Home() {
           </div>
         </div>
       )}
+      
       {/* Booking Modal */}
       {showBookingModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center">
